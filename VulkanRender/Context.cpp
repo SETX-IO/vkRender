@@ -121,7 +121,9 @@ void Context::createUniformBuffer()
 void Context::createDescriptorPool()
 {
     DescriptorPoolSize poolSize;
-    poolSize.setDescriptorCount(MAX_FRAME_IN_FLIGHT);
+    poolSize
+        .setType(DescriptorType::eUniformBuffer)
+        .setDescriptorCount(MAX_FRAME_IN_FLIGHT);
 
     DescriptorPoolCreateInfo createInfo;
     createInfo
@@ -168,8 +170,8 @@ DescriptorSetLayout Context::createDescriptorSetLayout()
     DescriptorSetLayoutBinding setBinding;
     setBinding
         .setBinding(0)
-        .setDescriptorType(DescriptorType::eUniformBuffer)
         .setDescriptorCount(1)
+        .setDescriptorType(DescriptorType::eUniformBuffer)
         .setStageFlags(ShaderStageFlagBits::eVertex);
     
     DescriptorSetLayoutCreateInfo createInfo;
@@ -244,8 +246,8 @@ void Context::createRenderPass()
 
 bool Context::createGraphicsPipeLine()
 {
-    auto vertSource = readFile("E:/Documents/Project/VulkanRenderer/build/bin/Debug/Resouces/vert.spv");
-    auto fragSource = readFile("E:/Documents/Project/VulkanRenderer/build/bin/Debug/Resouces/frag.spv");
+    auto vertSource = readFile("E:/Documents/Project/vkRender/build/bin/Debug/Resouces/vert.spv");
+    auto fragSource = readFile("E:/Documents/Project/vkRender/build/bin/Debug/Resouces/frag.spv");
 
     auto vertShader = createShaderModel(vertSource);
     auto fragShader = createShaderModel(fragSource);
@@ -489,13 +491,14 @@ void Context::updateUniform()
 void Context::draw()
 {
     const auto device = Device::getInstance()->getDevice();
-    
+
     const auto res1 = device.waitForFences(inFlightFences[currentFrame], true, std::numeric_limits<uint64_t>::max());
     if (res1 != Result::eSuccess)
     {
         std::cout << "????" << "\t";
         return;
     }
+    device.resetFences(inFlightFences[currentFrame]);
 
     const auto res =  device.acquireNextImageKHR(swapchain_->get(), std::numeric_limits<uint32_t>::max(), imageAvailableSemaphores[currentFrame], nullptr);
     if (res.result == Result::eErrorOutOfDateKHR)
@@ -508,8 +511,6 @@ void Context::draw()
         std::cout << "?" << "\t";
         return;
     }
-
-    device.resetFences(inFlightFences[currentFrame]);
     
     uint32_t imageIndex = res.value;
     commandBuffers[currentFrame].reset();
