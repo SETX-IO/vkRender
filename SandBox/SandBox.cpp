@@ -1,0 +1,66 @@
+#define GLFW_INCLUDE_VULKAN
+#include <glfw3.h>
+
+#include "Context.h"
+
+GLFWwindow* window = nullptr;
+vkRender::Context *context = nullptr;
+
+void mainLoop();
+static void init();
+
+int main(int argc, char* argv[])
+{
+    glfwInit();
+
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+
+    window = glfwCreateWindow(640, 480, "Vulkan Render", nullptr, nullptr);
+
+    init();
+
+    while (!glfwWindowShouldClose(window))
+    {
+        glfwPollEvents();
+        mainLoop();
+    }
+
+    glfwDestroyWindow(window);
+    glfwTerminate();
+    return 0;
+}
+
+void init()
+{
+    unsigned int count;
+    const char** extensionArray = glfwGetRequiredInstanceExtensions(&count);
+    std::vector<const char*> extensions(count);
+    for (int i = 0; i < count; ++i)
+    {
+        const char *extension = extensionArray[i];
+        // std::cout << extension << "\n";
+        
+        extensions[i] = extension;
+    }
+    
+    context = vkRender::Context::getInstance(extensions,
+        [&](vk::Instance instance) {
+            VkSurfaceKHR surface;
+            if (glfwCreateWindowSurface(instance, window, nullptr, &surface))
+                return surface;
+            return surface;
+    });
+    
+    // int width = 0;
+    // int height = 0;
+    // glfwGetWindowFrameSize(window, nullptr, nullptr, &width, &height);
+    
+    // context->setFrameSize(glm::vec2(width, height));
+}
+
+
+void mainLoop()
+{
+    context->draw();
+}
