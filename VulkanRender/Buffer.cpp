@@ -1,7 +1,9 @@
 #include "Buffer.h"
 
+#include "CommandManager.h"
 #include "Context.h"
 #include "Device.h"
+#include "Memory/Memory.h"
 
 namespace vkRender
 {
@@ -33,7 +35,9 @@ Buffer* Buffer::create(BufferUsageFlags bufferType, DeviceSize size)
 bool Buffer::init(BufferUsageFlags bufferType, MemoryPropertyFlags property)
 {
     createBuffer(bufferType);
-    allocateMemory(property);
+    
+    MemoryRequirements memory = Device::getInstance()->getDevice().getBufferMemoryRequirements(buffer_);
+    memory_ = Memory::AllocateMemory(property, memory);
 
     Device::getInstance()->getDevice().bindBufferMemory(buffer_, memory_, 0);
 
@@ -45,7 +49,7 @@ bool Buffer::init(BufferUsageFlags bufferType, MemoryPropertyFlags property)
     return true;
 }
 
-void Buffer::release()
+void Buffer::release() const
 {
     Device::getInstance()->getDevice().unmapMemory(memory_);
     
@@ -53,46 +57,30 @@ void Buffer::release()
     Device::getInstance()->getDevice().freeMemory(memory_);
 }
 
-void Buffer::copy(const Buffer& dstBuffer)
+void Buffer::copy(const Buffer& dstBuffer) const
 {
-    CommandBufferAllocateInfo allocate;
-    allocate
-        .setLevel(CommandBufferLevel::ePrimary)
-        .setCommandPool(Context::getInstance()->getCommandPool())
-        .setCommandBufferCount(1);
+    CommandManager::Instance()->record([&](const CommandBuffer &cmd)
+    {
+        BufferCopy bufferCopy;
+        bufferCopy
+            .setSrcOffset(0)
+            .setDstOffset(0)
+            .setSize(dstBuffer.size());
 
-    auto cmdBuffer = Device::getInstance()->getDevice().allocateCommandBuffers(allocate)[0];
+        cmd.copyBuffer(buffer_, dstBuffer, 1, &bufferCopy);
+    });
 
-    CommandBufferBeginInfo beginInfo;
-    beginInfo.setFlags(CommandBufferUsageFlagBits::eOneTimeSubmit);
-    cmdBuffer.begin(beginInfo);
-
-    BufferCopy bufferCopy;
-    bufferCopy
-        .setSrcOffset(0)
-        .setDstOffset(0)
-        .setSize(dstBuffer.size());
-
-    cmdBuffer.copyBuffer(buffer_, dstBuffer, 1, &bufferCopy);
-    cmdBuffer.end();
-
-    SubmitInfo submit;
-    submit.setCommandBuffers(cmdBuffer);
-
-    Device::getInstance()->graphicsQueue.submit(submit);
-    Device::getInstance()->graphicsQueue.waitIdle();
-    
-    Device::getInstance()->getDevice().freeCommandBuffers(Context::getInstance()->getCommandPool(), cmdBuffer);
     release();
+}
+
+void Buffer::data(const void* data) const
+{
+    memcpy(data_, data, size_);
 }
 
 Buffer::Buffer(DeviceSize size):
 size_(size)
 {}
-
-Buffer::~Buffer()
-{
-}
 
 void Buffer::createBuffer(BufferUsageFlags bufferType)
 {
@@ -102,29 +90,5 @@ void Buffer::createBuffer(BufferUsageFlags bufferType)
         .setUsage(bufferType)
         .setSharingMode(SharingMode::eExclusive);
     buffer_ = Device::getInstance()->getDevice().createBuffer(createInfo);
-}
-
-void Buffer::allocateMemory(MemoryPropertyFlags property)
-{
-    MemoryRequirements memory = Device::getInstance()->getDevice().getBufferMemoryRequirements(buffer_);
-    PhysicalDeviceMemoryProperties physicalMemory = Device::getInstance()->getPDevice().getMemoryProperties();
-    uint32_t typeFilter = memory.memoryTypeBits;
-    int typeIndex = 0;
-
-    for (uint32_t i = 0; i < physicalMemory.memoryTypeCount; ++i)
-    {
-        if (typeFilter & (1 << i) && (physicalMemory.memoryTypes[i].propertyFlags & property) == property)
-        {
-            typeIndex = i;
-            break;
-        }
-    }
-    
-    MemoryAllocateInfo allocateInfo;
-    allocateInfo
-        .setAllocationSize(memory.size)
-        .setMemoryTypeIndex(typeIndex);
-    
-    memory_ = Device::getInstance()->getDevice().allocateMemory(allocateInfo);
 }
 }

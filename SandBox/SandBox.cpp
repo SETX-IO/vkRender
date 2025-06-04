@@ -2,9 +2,11 @@
 #include <glfw3.h>
 
 #include "Context.h"
+#include "Renderer.h"
 
 GLFWwindow* window = nullptr;
 vkRender::Context *context = nullptr;
+vkRender::Renderer *renderer = nullptr;
 
 void mainLoop();
 static void init();
@@ -51,6 +53,8 @@ void init()
                 return surface;
             return surface;
     });
+
+    renderer = vkRender::Renderer::create(context);
     
     // int width = 0;
     // int height = 0;

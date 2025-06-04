@@ -1,6 +1,10 @@
 ﻿#include "Context.h"
 
+#include <map>
+
+#include "CommandManager.h"
 #include "Device.h"
+#include "Texture.h"
 #include "Vertex.h"
 
 #include "glm/gtc/matrix_transform.hpp"
@@ -8,7 +12,6 @@
 namespace vkRender
 {
 US_VKN;
-
 Context* Context::s_instance = nullptr;
 
 Context* Context::getInstance(const std::vector<const char*>& extensions, const CreateSurfacerFunc& func)
@@ -33,7 +36,9 @@ Context::~Context()
     
     device.destroyPipelineLayout(pipelineLayout);
     device.destroyRenderPass(renderPass);
-    device.destroyCommandPool(commandPool);
+    // device.destroyCommandPool(commandPool);
+    CommandManager::Instance()->release();
+    
     for (int i = 0; i < MAX_FRAME_IN_FLIGHT; ++i)
     {
         device.destroySemaphore(imageAvailableSemaphores[i]);
@@ -73,40 +78,32 @@ bool Context::init(const std::vector<const char*>& extensions, const CreateSurfa
     }
     
     createRenderPass();
-    
-    swapchain_ = Swapchain::create();
     pipelineSetLayout = createDescriptorSetLayout();
     result = createGraphicsPipeLine();
     
-    createCommandPool();
-    createCommandBuffer();
+    swapchain_ = Swapchain::create();
+    
+    commandBuffers = CommandManager::Instance()->newCmdBuffers(MAX_FRAME_IN_FLIGHT);
     createSycnObjcet();
     
     auto stagingBuffer = Buffer::create(BufferUsageFlagBits::eTransferSrc, sizeof(vertexes[0]) * vertexes.size());
-    memcpy(stagingBuffer->data_, vertexes.data(), stagingBuffer->size());
-    
+    stagingBuffer->data(vertexes.data());
     vertexBuffer_ = Buffer::createDeviceLocal(BufferUsageFlagBits::eVertexBuffer | BufferUsageFlagBits::eTransferDst, stagingBuffer->size());
-    
     stagingBuffer->copy(*vertexBuffer_);
-    // stagingBuffer->release();
+
+    stagingBuffer = Buffer::create(BufferUsageFlagBits::eTransferSrc, sizeof(indices[0]) * indices.size());
+    stagingBuffer->data(indices.data());
     
-    createIndexBuffer();
+    indexBuffer_ = Buffer::createDeviceLocal(BufferUsageFlagBits::eIndexBuffer | BufferUsageFlagBits::eTransferDst, stagingBuffer->size());
+    stagingBuffer->copy(*indexBuffer_);
+    
     createUniformBuffer();
     createDescriptorPool();
     createDescriptorSets();
+
+    auto t = Texture::createFormFile("E:/Documents/Project/vkRender/build/bin/Debug/Resouces/image.jpg");
     
     return result;
-}
-
-void Context::createIndexBuffer()
-{
-    auto stagingBuffer = Buffer::create(BufferUsageFlagBits::eTransferSrc, sizeof(indices[0]) * indices.size());
-    memcpy(stagingBuffer->data_, indices.data(), stagingBuffer->size());
-    
-    indexBuffer_ = Buffer::createDeviceLocal(BufferUsageFlagBits::eIndexBuffer | BufferUsageFlagBits::eTransferDst, stagingBuffer->size());
-    
-    stagingBuffer->copy(*indexBuffer_);
-    // stagingBuffer->release();
 }
 
 void Context::createUniformBuffer()
@@ -150,14 +147,11 @@ void Context::createDescriptorSets()
         DescriptorBufferInfo bufferInfo;
         bufferInfo
             .setBuffer(uniformBuffer[i]->getBuffer())
-            .setOffset(0)
             .setRange(sizeof(UniformObj));
 
         WriteDescriptorSet write;
         write
             .setDstSet(descriptorSets[i])
-            .setDstBinding(0)
-            .setDstArrayElement(0)
             .setDescriptorType(DescriptorType::eUniformBuffer)
             .setBufferInfo(bufferInfo);
 
@@ -169,7 +163,6 @@ DescriptorSetLayout Context::createDescriptorSetLayout()
 {
     DescriptorSetLayoutBinding setBinding;
     setBinding
-        .setBinding(0)
         .setDescriptorCount(1)
         .setDescriptorType(DescriptorType::eUniformBuffer)
         .setStageFlags(ShaderStageFlagBits::eVertex);
@@ -205,6 +198,8 @@ void Context::createVkInstance(const std::vector<const char*>& extensions)
 
 void Context::createRenderPass()
 {
+    RenderPassCreateInfo createInfo;
+    
     AttachmentDescription colorAttachment;
     colorAttachment
         .setFormat(Format::eB8G8R8A8Srgb)
@@ -215,33 +210,27 @@ void Context::createRenderPass()
         .setStencilStoreOp(AttachmentStoreOp::eDontCare)
         .setInitialLayout(ImageLayout::eUndefined)
         .setFinalLayout(ImageLayout::ePresentSrcKHR);
+    createInfo.setAttachments(colorAttachment);
+    
 
     AttachmentReference colorAttachmentRef;
-    colorAttachmentRef
-        .setAttachment(0)
-        .setLayout(ImageLayout::eColorAttachmentOptimal);
+    colorAttachmentRef.setLayout(ImageLayout::eColorAttachmentOptimal);
 
     SubpassDescription subpass;
     subpass
         .setPipelineBindPoint(PipelineBindPoint::eGraphics)
         .setColorAttachments(colorAttachmentRef);
+    createInfo.setSubpasses(subpass);
 
     SubpassDependency dependency;
     dependency
         .setSrcSubpass(VK_SUBPASS_EXTERNAL)
-        .setDstSubpass(0)
         .setSrcStageMask(PipelineStageFlagBits::eColorAttachmentOutput)
-        .setSrcAccessMask({})
         .setDstStageMask(PipelineStageFlagBits::eColorAttachmentOutput)
         .setDstAccessMask(AccessFlagBits::eColorAttachmentWrite);
-    
-    RenderPassCreateInfo renderPassCreateInfo;
-    renderPassCreateInfo
-        .setAttachments(colorAttachment)
-        .setSubpasses(subpass)
-        .setDependencies(dependency);
+    createInfo.setDependencies(dependency);
 
-    renderPass = Device::getInstance()->getDevice().createRenderPass(renderPassCreateInfo);
+    renderPass = Device::getInstance()->getDevice().createRenderPass(createInfo);
 }
 
 bool Context::createGraphicsPipeLine()
@@ -274,6 +263,8 @@ bool Context::createGraphicsPipeLine()
 
     PipelineDynamicStateCreateInfo dynamicStateCreateInfo;
     dynamicStateCreateInfo.setDynamicStates(dynamicStates);
+    
+    createInfo.setPDynamicState(&dynamicStateCreateInfo);
 
     // 顶点输入
     PipelineVertexInputStateCreateInfo vertexInputInfo;
@@ -283,7 +274,6 @@ bool Context::createGraphicsPipeLine()
     vertexInputInfo
         .setVertexAttributeDescriptions(attribute)
         .setVertexBindingDescriptions(bindings);
-
     createInfo.setPVertexInputState(&vertexInputInfo);
 
     // 输入汇编
@@ -291,19 +281,16 @@ bool Context::createGraphicsPipeLine()
     inputAssemblyInfo
         .setTopology(PrimitiveTopology::eTriangleList)
         .setPrimitiveRestartEnable(false);
-
     createInfo.setPInputAssemblyState(&inputAssemblyInfo);
 
     // 视口和剪裁矩形
     Viewport viewport;
     viewport
-        .setX(0).setY(0)
         .setHeight(frameSize.y).setWidth(frameSize.x)
-        .setMaxDepth(1.f).setMinDepth(0.f);
+        .setMaxDepth(1.f);
 
     Rect2D scissor;
     scissor
-        .setOffset({0, 0})
         .setExtent({static_cast<uint32_t>(frameSize.x), static_cast<uint32_t>(frameSize.y)});
 
     PipelineViewportStateCreateInfo viewportState;
@@ -313,36 +300,27 @@ bool Context::createGraphicsPipeLine()
 
     
     createInfo.setPViewportState(&viewportState);
-    
+
+    // 光栅化
     PipelineRasterizationStateCreateInfo rasterization;
     rasterization
-        .setDepthClampEnable(false)
-        .setRasterizerDiscardEnable(false)
         .setPolygonMode(PolygonMode::eFill)
         .setLineWidth(1.f)
         .setCullMode(CullModeFlagBits::eBack)
-        .setFrontFace(FrontFace::eCounterClockwise)
-        .setDepthBiasEnable(false)
-        .setDepthBiasConstantFactor(0.f)
-        .setDepthBiasClamp(0.f)
-        .setDepthBiasSlopeFactor(0.f);
+        .setFrontFace(FrontFace::eCounterClockwise);
 
     createInfo.setPRasterizationState(&rasterization);
 
     PipelineMultisampleStateCreateInfo multisampleState;
     multisampleState
-        .setSampleShadingEnable(false)
         .setRasterizationSamples(SampleCountFlagBits::e1)
-        .setMinSampleShading(1.f)
-        .setAlphaToCoverageEnable(false)
-        .setAlphaToOneEnable(false);
+        .setMinSampleShading(1.f);
 
     createInfo.setPMultisampleState(&multisampleState);
 
     PipelineColorBlendAttachmentState colorBlendAttachment;
     colorBlendAttachment
         .setColorWriteMask(ColorComponentFlagBits::eR | ColorComponentFlagBits::eG | ColorComponentFlagBits::eB | ColorComponentFlagBits::eA)
-        .setBlendEnable(false)
         .setSrcColorBlendFactor(BlendFactor::eOne)
         .setDstColorBlendFactor(BlendFactor::eZero)
         .setColorBlendOp(BlendOp::eAdd)
@@ -352,11 +330,8 @@ bool Context::createGraphicsPipeLine()
 
     PipelineColorBlendStateCreateInfo colorBlending;
     colorBlending
-        .setLogicOpEnable(false)
         .setLogicOp(LogicOp::eCopy)
-        .setAttachmentCount(1)
-        .setAttachments(colorBlendAttachment)
-        .setBlendConstants({0.f, 0.f, 0.f, 0.f});
+        .setAttachments(colorBlendAttachment);
     
     createInfo.setPColorBlendState(&colorBlending);
     
@@ -367,10 +342,8 @@ bool Context::createGraphicsPipeLine()
     pipelineLayout = device.createPipelineLayout(layoutCrateInfo);
     
     createInfo
-        .setPDynamicState(&dynamicStateCreateInfo)
         .setLayout(pipelineLayout)
         .setRenderPass(renderPass)
-        .setSubpass(0)
         .setBasePipelineIndex(-1);
 
     auto result = device.createGraphicsPipeline(nullptr, createInfo);
@@ -387,43 +360,18 @@ bool Context::createGraphicsPipeLine()
     return true;
 }
 
-void Context::createCommandPool()
-{
-    CommandPoolCreateInfo createInfo;
-    createInfo
-        .setFlags(CommandPoolCreateFlagBits::eResetCommandBuffer)
-        .setQueueFamilyIndex(Device::getInstance()->indices_.graphicsFamily.value());
-
-    commandPool = Device::getInstance()->getDevice().createCommandPool(createInfo);
-}
-
-void Context::createCommandBuffer()
-{
-    commandBuffers.resize(MAX_FRAME_IN_FLIGHT);
-    
-    CommandBufferAllocateInfo allocateInfo;
-    allocateInfo
-        .setCommandPool(commandPool)
-        .setLevel(CommandBufferLevel::ePrimary)
-        .setCommandBufferCount(static_cast<uint32_t>(commandBuffers.size()));
-    commandBuffers = Device::getInstance()->getDevice().allocateCommandBuffers(allocateInfo);
-}
-
 void Context::createSycnObjcet()
 {
-    SemaphoreCreateInfo semaphoreInfo;
-    FenceCreateInfo fenceInfo;
-    fenceInfo.setFlags(FenceCreateFlagBits::eSignaled);
     imageAvailableSemaphores.resize(MAX_FRAME_IN_FLIGHT);
     renderFinishedSemaphores.resize(MAX_FRAME_IN_FLIGHT);
     inFlightFences.resize(MAX_FRAME_IN_FLIGHT);
 
-    auto device = Device::getInstance()->getDevice();
+    const auto device = Device::getInstance();
     for (int i = 0; i < MAX_FRAME_IN_FLIGHT; ++i)
     {
-        imageAvailableSemaphores[i] = device.createSemaphore(semaphoreInfo);
-        renderFinishedSemaphores[i] = device.createSemaphore(semaphoreInfo);
-        inFlightFences[i] = device.createFence(fenceInfo);
+        imageAvailableSemaphores[i] = device->newSemaphore();
+        renderFinishedSemaphores[i] = device->newSemaphore();
+        inFlightFences[i] = device->newFence();
     }
 }
 
@@ -445,7 +393,7 @@ void Context::recordCommandBuffer(uint32_t imageIndex)
     CommandBufferBeginInfo beginInfo;
 
     commandBuffers[currentFrame].begin(beginInfo);
-    ClearValue clearColor({{0.0f, 0.0f, 0.0f, 1.0f}});
+    ClearValue clearColor({{0.1f, 0.1f, 0.1f, 1.0f}});
     RenderPassBeginInfo PassBeginInfo;
     PassBeginInfo.setRenderPass(renderPass);
     PassBeginInfo.setFramebuffer(swapchain_->getFrameBuffers()[imageIndex]);
@@ -462,6 +410,7 @@ void Context::recordCommandBuffer(uint32_t imageIndex)
     commandBuffers[currentFrame].setScissor(0, 1, &scissor);
 
     DeviceSize offset = 0;
+    // commandBuffers[currentFrame].bindVertexBuffers(0, buffer, offset);
     commandBuffers[currentFrame].bindVertexBuffers(0, vertexBuffer_->getBuffer(), offset);
     commandBuffers[currentFrame].bindIndexBuffer(indexBuffer_->getBuffer(), 0, IndexType::eUint16);
     commandBuffers[currentFrame].bindDescriptorSets(PipelineBindPoint::eGraphics, pipelineLayout, 0, 1, &descriptorSets[currentFrame], 0 , nullptr);
@@ -485,7 +434,7 @@ void Context::updateUniform()
     obj.proj = glm::perspective(glm::radians(45.f), frameSize.x / frameSize.y, 0.1f, 10.f);
     obj.proj[1][1] *= -1;
 
-    memcpy(uniformBuffer[currentFrame]->data_, &obj, uniformBuffer[currentFrame]->size());
+    uniformBuffer[currentFrame]->data(&obj);
 }
 
 void Context::draw()
@@ -544,7 +493,7 @@ void Context::draw()
         std::cout << "???" << "\t";
         return;
     }
-
+    
     currentFrame = (currentFrame + 1) % MAX_FRAME_IN_FLIGHT;
 }
 

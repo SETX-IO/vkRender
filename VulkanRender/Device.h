@@ -52,8 +52,11 @@ public:
     
     bool init();
 
-    vk::PhysicalDevice & getPDevice() {return pDevice_;}
+    vk::PhysicalDevice &getPDevice() {return pDevice_;}
     vk::Device &getDevice() {return device_;}
+
+    vk::Semaphore newSemaphore() const;
+    vk::Fence newFence() const;
 
     QueueFamilyIndices indices_;
     

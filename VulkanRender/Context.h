@@ -1,5 +1,4 @@
 ﻿#pragma once
-#include <functional>
 #include <fstream>
 
 #include "glm/glm.hpp"
@@ -10,7 +9,7 @@
 
 namespace vkRender
 {
-constexpr int MAX_FRAME_IN_FLIGHT = 2;
+constexpr int MAX_FRAME_IN_FLIGHT = 3;
 static auto empty = std::vector<const char*>();
 
 using CreateSurfacerFunc = std::function<vk::SurfaceKHR(vk::Instance)>;
@@ -43,6 +42,7 @@ static std::vector<char> readFile(const std::string& filename)
     return buffer;
 }
 
+// TODO: 将渲染有关的提出去单独写一个 Renderer 类
 class Context final
 {
 public:
@@ -51,9 +51,8 @@ public:
 
     Context() = default;
     ~Context();
-
+    
     // get Vulkan instance
-    vk::CommandPool &getCommandPool() {return commandPool;}
     vk::Instance & getVkInstance() {return vkInstance;}
     vk::SurfaceKHR &getSurface() {return surface;}
     vk::RenderPass &getRenderPass() {return renderPass;}
@@ -65,11 +64,8 @@ public:
     void createVkInstance(const std::vector<const char*>& extensions);
     void createRenderPass();
     bool createGraphicsPipeLine();
-    void createCommandPool();
-    void createCommandBuffer();
     void createSycnObjcet();
     vk::ShaderModule createShaderModel(const std::vector<char> &code);
-    void createIndexBuffer();
     void createUniformBuffer();
     void createDescriptorPool();
     void createDescriptorSets();
@@ -83,7 +79,6 @@ public:
     static Context* s_instance;
 
 private:
-    
     vk::Instance vkInstance;
 
     Swapchain *swapchain_;
@@ -94,8 +89,7 @@ private:
     vk::Pipeline graphicsPipeline;
     vk::PipelineLayout pipelineLayout;
     vk::DescriptorSetLayout pipelineSetLayout;
-
-    vk::CommandPool commandPool;
+    
     std::vector<vk::CommandBuffer> commandBuffers;
 
     std::vector<vk::Semaphore> imageAvailableSemaphores;

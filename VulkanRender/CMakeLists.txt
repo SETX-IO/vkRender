@@ -2,7 +2,11 @@ set(RENDER_HEADER
 	VulkanRender/Context.h
 	VulkanRender/Device.h
 	VulkanRender/Swapchain.h
+	VulkanRender/CommandManager.h
+	VulkanRender/Renderer.h
 	VulkanRender/Buffer.h
+	VulkanRender/Texture.h
+	VulkanRender/Memory/Memory.h
 	VulkanRender/Vertex.h
 	VulkanRender/Uniform.h
 	VulkanRender/vkRender.h
@@ -12,5 +16,9 @@ set(RENDER_SRC
 	VulkanRender/Context.cpp
 	VulkanRender/Device.cpp
 	VulkanRender/Swapchain.cpp
+	VulkanRender/CommandManager.cpp
+	VulkanRender/Renderer.cpp
 	VulkanRender/Buffer.cpp
+	VulkanRender/Texture.cpp
+	VulkanRender/Memory/Memory.cpp
 )

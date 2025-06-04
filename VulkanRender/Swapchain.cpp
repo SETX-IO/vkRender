@@ -92,7 +92,7 @@ void Swapchain::queryInfo()
 
 void Swapchain::createSwapChain()
 {
-    auto context = Device::getInstance();
+    const auto context = Device::getInstance();
     
     vk::SwapchainCreateInfoKHR createInfo;
     std::array indices = {context->indices_.graphicsFamily.value(), context->indices_.presentFamily.value()};

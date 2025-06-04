@@ -12,29 +12,27 @@ public:
 
     bool init(vk::BufferUsageFlags bufferType, vk::MemoryPropertyFlags property);
     
-
-    void copy(const Buffer &dstBuffer);
+    void data(const void* data) const;
+    void copy(const Buffer &dstBuffer) const;
     
-    void release();
+    void release() const;
     
-    vk::DeviceMemory &getMemory() {return memory_;}
     vk::Buffer &getBuffer() {return buffer_;}
     uint32_t size() const {return size_;}
     
     operator vk::Buffer() const {return buffer_;}
 
-    void *data_ = nullptr;
 private:
     Buffer(vk::DeviceSize size);
     Buffer() = delete;
-    ~Buffer();
 
     void createBuffer(vk::BufferUsageFlags bufferType);
-    void allocateMemory(vk::MemoryPropertyFlags property);
 
     vk::DeviceSize size_;
     
     vk::Buffer buffer_;
     vk::DeviceMemory memory_;
+    
+    void *data_ = nullptr;
 };
 }

@@ -4,6 +4,7 @@
 
 namespace vkRender
 {
+US_VKN;
 Device *Device::s_instance = nullptr;
 
 Device::~Device()
@@ -33,6 +34,18 @@ bool Device::init()
     }
     
     return result;
+}
+
+Semaphore Device::newSemaphore() const
+{
+    constexpr  SemaphoreCreateInfo createInfo;
+    return device_.createSemaphore(createInfo);
+}
+
+Fence Device::newFence() const
+{
+    constexpr FenceCreateInfo createInfo{FenceCreateFlagBits::eSignaled};
+    return device_.createFence(createInfo);
 }
 
 bool Device::pickPhysicalDevice()
@@ -72,14 +85,14 @@ bool Device::pickPhysicalDevice()
 void Device::createLogicalDevice()
 {
     float queuePriority = 1.0f;
-    vk::DeviceCreateInfo createInfo;
+    DeviceCreateInfo createInfo;
     std::vector deviceExtension = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
-    std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
+    std::vector<DeviceQueueCreateInfo> queueCreateInfos;
     std::set uniqueQueueFamilies = {indices_.graphicsFamily.value(), indices_.presentFamily.value()};
 
     for (uint32_t queueFamily : uniqueQueueFamilies)
     {
-        vk::DeviceQueueCreateInfo queueCreateInfo;
+        DeviceQueueCreateInfo queueCreateInfo;
         queueCreateInfo
             .setQueueFamilyIndex(queueFamily)
             .setQueueCount(1)
