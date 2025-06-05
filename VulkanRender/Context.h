@@ -6,6 +6,7 @@
 #include "vkRender.h"
 #include "Swapchain.h"
 #include "Buffer.h"
+#include "Texture.h"
 
 namespace vkRender
 {
@@ -101,6 +102,8 @@ private:
     std::vector<Buffer*> uniformBuffer;
     vk::DescriptorPool descriptorPool;
     std::vector<vk::DescriptorSet> descriptorSets;
+
+    Texture *texture_;
 
     glm::vec2 frameSize = glm::vec2(640, 480);
 };

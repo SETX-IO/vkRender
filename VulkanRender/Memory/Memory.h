@@ -7,12 +7,17 @@ namespace vkRender
 class Memory
 {
 public:
-    void Binding(const vk::Buffer &buffer, vk::MemoryPropertyFlags property);
+    static void* BindBuffer(const vk::Buffer &buffer, vk::MemoryPropertyFlags property);
     
-    static vk::DeviceMemory AllocateMemory(vk::MemoryPropertyFlags property, vk::MemoryRequirements requirements);
+    static vk::DeviceMemory AllocateMemory(vk::MemoryPropertyFlags property, const vk::MemoryRequirements& requirements);\
+
+    static void release();
 private:
-    std::map<vk::MemoryPropertyFlags, vk::DeviceMemory> memoryCache_;
+    static std::map<vk::MemoryPropertyFlags, vk::DeviceMemory> memoryCache_;
 
     static uint64_t memoryOffset;
+    static uint16_t bufferCount;
+
+    static constexpr uint32_t MAX_SIZE = 1024 * 1024;
 };
 }

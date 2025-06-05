@@ -62,6 +62,8 @@ public:
     
     vk::Queue graphicsQueue;
     vk::Queue presentQueue;
+
+    vk::PhysicalDeviceProperties properties;
 private:
     bool pickPhysicalDevice();
     void createLogicalDevice();

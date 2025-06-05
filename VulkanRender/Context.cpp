@@ -8,6 +8,7 @@
 #include "Vertex.h"
 
 #include "glm/gtc/matrix_transform.hpp"
+#include "Memory/Memory.h"
 
 namespace vkRender
 {
@@ -36,7 +37,7 @@ Context::~Context()
     
     device.destroyPipelineLayout(pipelineLayout);
     device.destroyRenderPass(renderPass);
-    // device.destroyCommandPool(commandPool);
+
     CommandManager::Instance()->release();
     
     for (int i = 0; i < MAX_FRAME_IN_FLIGHT; ++i)
@@ -52,16 +53,19 @@ Context::~Context()
 
     device.destroyDescriptorPool(descriptorPool);
     device.destroyDescriptorSetLayout(pipelineSetLayout);
+    texture_->release();
+
+    Memory::release();
     
     s_instance = nullptr;
 }
 
 const std::vector<Vertex> vertexes =
     {
-        {-0.8f, -0.8f},
-        {0.8f, -0.8f},
-        {0.8f, 0.8f},
-        {-0.8f, 0.8f}
+        {-0.8f, -0.8f, 1.f, 0.f},
+        {0.8f, -0.8f, 0.f, 0.f},
+        {0.8f, 0.8f, 0.f, 1.f},
+        {-0.8f, 0.8f, 1.f, 1.f}
     };
 
 const std::vector<uint16_t> indices = {0, 1, 2, 2, 3, 0};
@@ -97,11 +101,12 @@ bool Context::init(const std::vector<const char*>& extensions, const CreateSurfa
     indexBuffer_ = Buffer::createDeviceLocal(BufferUsageFlagBits::eIndexBuffer | BufferUsageFlagBits::eTransferDst, stagingBuffer->size());
     stagingBuffer->copy(*indexBuffer_);
     
+    texture_ = Texture::createFormFile("E:/Documents/Project/vkRender/build/bin/Debug/Resouces/image.jpg");
+    
     createUniformBuffer();
     createDescriptorPool();
     createDescriptorSets();
 
-    auto t = Texture::createFormFile("E:/Documents/Project/vkRender/build/bin/Debug/Resouces/image.jpg");
     
     return result;
 }
@@ -117,9 +122,13 @@ void Context::createUniformBuffer()
 
 void Context::createDescriptorPool()
 {
-    DescriptorPoolSize poolSize;
-    poolSize
+    std::array <DescriptorPoolSize, 2> poolSize;
+    poolSize[0]
         .setType(DescriptorType::eUniformBuffer)
+        .setDescriptorCount(MAX_FRAME_IN_FLIGHT);
+
+    poolSize[1]
+        .setType(DescriptorType::eCombinedImageSampler)
         .setDescriptorCount(MAX_FRAME_IN_FLIGHT);
 
     DescriptorPoolCreateInfo createInfo;
@@ -142,33 +151,49 @@ void Context::createDescriptorSets()
 
     descriptorSets = Device::getInstance()->getDevice().allocateDescriptorSets(allocateInfo);
 
+    std::array<WriteDescriptorSet, 2> writes;
+
     for (int i = 0; i < MAX_FRAME_IN_FLIGHT; ++i)
     {
         DescriptorBufferInfo bufferInfo;
         bufferInfo
             .setBuffer(uniformBuffer[i]->getBuffer())
             .setRange(sizeof(UniformObj));
-
-        WriteDescriptorSet write;
-        write
+        
+        writes[0]
             .setDstSet(descriptorSets[i])
             .setDescriptorType(DescriptorType::eUniformBuffer)
             .setBufferInfo(bufferInfo);
 
-        Device::getInstance()->getDevice().updateDescriptorSets(1, &write, 0 ,nullptr);
+        auto imageInfo = texture_->newDescriptor();
+        writes[1]
+            .setDstBinding(1)
+            .setDstSet(descriptorSets[i])
+            .setDescriptorType(DescriptorType::eCombinedImageSampler)
+            .setImageInfo(imageInfo);
+
+        Device::getInstance()->getDevice().updateDescriptorSets(2, writes.data(), 0 ,nullptr);
     }
 }
 
 DescriptorSetLayout Context::createDescriptorSetLayout()
 {
-    DescriptorSetLayoutBinding setBinding;
-    setBinding
+    DescriptorSetLayoutBinding uboBinding;
+    uboBinding
         .setDescriptorCount(1)
         .setDescriptorType(DescriptorType::eUniformBuffer)
         .setStageFlags(ShaderStageFlagBits::eVertex);
-    
+
+    DescriptorSetLayoutBinding samplerBinding;
+    samplerBinding
+        .setBinding(1)
+        .setDescriptorCount(1)
+        .setDescriptorType(DescriptorType::eCombinedImageSampler)
+        .setStageFlags(ShaderStageFlagBits::eFragment);
+
+    std::array bindings = {uboBinding, samplerBinding};
     DescriptorSetLayoutCreateInfo createInfo;
-    createInfo.setBindings(setBinding);
+    createInfo.setBindings(bindings);
 
     return Device::getInstance()->getDevice().createDescriptorSetLayout(createInfo);
 }
@@ -297,7 +322,6 @@ bool Context::createGraphicsPipeLine()
     viewportState
         .setViewports(viewport)
         .setScissors(scissor);
-
     
     createInfo.setPViewportState(&viewportState);
 

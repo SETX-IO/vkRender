@@ -5,6 +5,7 @@
 
 namespace vkRender
 {
+US_VKN;
 
 Swapchain* Swapchain::create()
 {
@@ -35,6 +36,20 @@ void Swapchain::reCreate()
     createFramebuffer();
 }
 
+ImageView Swapchain::newImageView(const Image& image, Format format)
+{
+    constexpr ImageSubresourceRange subresourceRange(ImageAspectFlagBits::eColor, 0, 1, 0, 1);
+    
+    ImageViewCreateInfo createInfo;
+    createInfo
+        .setImage(image)
+        .setViewType(ImageViewType::e2D)
+        .setFormat(format)
+        .setSubresourceRange(subresourceRange);
+    
+    return Device::getInstance()->getDevice().createImageView(createInfo);
+}
+
 void Swapchain::release() const
 {
     auto device = Device::getInstance()->getDevice();
@@ -62,14 +77,14 @@ void Swapchain::queryInfo()
     info.format = Formats[0];
     for (auto format : Formats)
     {
-        if (format.format == vk::Format::eB8G8R8A8Srgb && format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear)
+        if (format.format == Format::eB8G8R8A8Srgb && format.colorSpace == ColorSpaceKHR::eSrgbNonlinear)
         {
             info.format = format;
             break;
         }
     }
 
-    vk::Extent2D actualExtent {640, 480};
+    Extent2D actualExtent {640, 480};
     
     actualExtent.width = std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
     actualExtent.height = std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
@@ -78,11 +93,11 @@ void Swapchain::queryInfo()
     info.transform = swapChainSupport.currentTransform;
 
     auto presentModes = pDevice.getSurfacePresentModesKHR(surface);
-    info.presentMode = vk::PresentModeKHR::eFifo;
+    info.presentMode = PresentModeKHR::eFifo;
     
     for (const auto& presentMode : presentModes)
     {
-        if (presentMode == vk::PresentModeKHR::eMailbox)
+        if (presentMode == PresentModeKHR::eMailbox)
         {
             info.presentMode = presentMode;
             break;
@@ -94,15 +109,15 @@ void Swapchain::createSwapChain()
 {
     const auto context = Device::getInstance();
     
-    vk::SwapchainCreateInfoKHR createInfo;
+    SwapchainCreateInfoKHR createInfo;
     std::array indices = {context->indices_.graphicsFamily.value(), context->indices_.presentFamily.value()};
     
     createInfo
         .setSurface(Context::getInstance()->getSurface())
         .setImageArrayLayers(1)
         .setMinImageCount(info.imageCount)
-        .setImageUsage(vk::ImageUsageFlagBits::eColorAttachment)
-        .setCompositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque)
+        .setImageUsage(ImageUsageFlagBits::eColorAttachment)
+        .setCompositeAlpha(CompositeAlphaFlagBitsKHR::eOpaque)
         .setImageFormat(info.format.format)
         .setImageColorSpace(info.format.colorSpace)
         .setImageExtent(info.extent)
@@ -118,7 +133,7 @@ void Swapchain::createSwapChain()
         createInfo.setQueueFamilyIndices(indices);
     }
 
-    createInfo.setImageSharingMode(context->indices_.equal() ? vk::SharingMode::eExclusive : vk::SharingMode::eConcurrent);
+    createInfo.setImageSharingMode(context->indices_.equal() ? SharingMode::eExclusive : SharingMode::eConcurrent);
 
     swapchain_ = context->getDevice().createSwapchainKHR(createInfo);
 }
@@ -132,22 +147,11 @@ void Swapchain::createFramebuffer()
     imageViews.resize(images.size());
     framebuffers_.resize(imageViews.size());
     
-    // Create imageViews 
-    vk::ImageSubresourceRange subresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1);
-    
     for (int i = 0; i < images.size(); ++i)
     {
-        vk::ImageViewCreateInfo imageviewInfo;
-        imageviewInfo
-            .setImage(images[i])
-            .setViewType(vk::ImageViewType::e2D)
-            .setFormat(vk::Format::eB8G8R8A8Srgb)
-            .setComponents({})
-            .setSubresourceRange(subresourceRange);
+        imageViews[i] = newImageView(images[i], info.format.format);
 
-        imageViews[i] = device->getDevice().createImageView(imageviewInfo);
-
-        vk::FramebufferCreateInfo framebufferInfo;
+        FramebufferCreateInfo framebufferInfo;
         std::array attachment = {imageViews[i]};
         
         framebufferInfo

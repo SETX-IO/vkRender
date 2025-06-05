@@ -30,6 +30,7 @@ bool Device::init()
     if (pickPhysicalDevice())
     {
         createLogicalDevice();
+        properties = pDevice_.getProperties();
         result = true;
     }
     
@@ -61,6 +62,8 @@ bool Device::pickPhysicalDevice()
         std::vector extensionProperties = physicalDevice.enumerateDeviceExtensionProperties();
         auto format = physicalDevice.getSurfaceFormatsKHR(surface);
         auto presentMode = physicalDevice.getSurfacePresentModesKHR(surface);
+        auto feature = physicalDevice.getFeatures();
+        
          
         for (const auto & extensionProperty : extensionProperties)
         {
@@ -68,7 +71,7 @@ bool Device::pickPhysicalDevice()
         }
         
         if (physicalDevice.getFeatures().geometryShader && requiredExtensions.empty()
-            && !format.empty() && !presentMode.empty())
+            && !format.empty() && !presentMode.empty() && feature.samplerAnisotropy)
         {
             pDevice_ = physicalDevice;
             std::cout << physicalDevice.getProperties().deviceName << "\n";

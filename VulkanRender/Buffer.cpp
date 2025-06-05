@@ -38,13 +38,15 @@ bool Buffer::init(BufferUsageFlags bufferType, MemoryPropertyFlags property)
     
     MemoryRequirements memory = Device::getInstance()->getDevice().getBufferMemoryRequirements(buffer_);
     memory_ = Memory::AllocateMemory(property, memory);
-
+    
     Device::getInstance()->getDevice().bindBufferMemory(buffer_, memory_, 0);
-
-    if (property != MemoryPropertyFlagBits::eDeviceLocal)
+    
+    if (property & MemoryPropertyFlagBits::eHostVisible)
     {
         data_ = Device::getInstance()->getDevice().mapMemory(memory_, 0, size_);
     }
+
+    // data_ = Memory::BindBuffer(buffer_, property);
     
     return true;
 }
@@ -59,14 +61,14 @@ void Buffer::release() const
 
 void Buffer::copy(const Buffer& dstBuffer) const
 {
+    BufferCopy bufferCopy;
+    bufferCopy
+        .setSrcOffset(0)
+        .setDstOffset(0)
+        .setSize(dstBuffer.size());
+    
     CommandManager::Instance()->record([&](const CommandBuffer &cmd)
     {
-        BufferCopy bufferCopy;
-        bufferCopy
-            .setSrcOffset(0)
-            .setDstOffset(0)
-            .setSize(dstBuffer.size());
-
         cmd.copyBuffer(buffer_, dstBuffer, 1, &bufferCopy);
     });
 

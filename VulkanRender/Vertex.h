@@ -6,10 +6,11 @@ namespace vkRender
 {
 struct Vertex
 {
-    float x, y;
+    float x, y, w, h;
+    
     static vk::VertexInputBindingDescription getBinding()
     {
-        vk::VertexInputBindingDescription binding;
+         vk::VertexInputBindingDescription binding;
         binding
             .setBinding(0)
             .setInputRate(vk::VertexInputRate::eVertex)
@@ -18,16 +19,20 @@ struct Vertex
         return binding;
     }
 
-    static vk::VertexInputAttributeDescription getAttribute()
+    static std::array<vk::VertexInputAttributeDescription, 2> getAttribute()
     {
-        vk::VertexInputAttributeDescription attribute;
-        attribute
-            .setBinding(0)
+        std::array<vk::VertexInputAttributeDescription, 2> attributes;
+        attributes[0]
             .setFormat(vk::Format::eR32G32Sfloat)
             .setLocation(0)
             .setOffset(0);
+
+        attributes[1]
+            .setFormat(vk::Format::eR32G32Sfloat)
+            .setLocation(1)
+            .setOffset(sizeof(float) * 2);
     
-        return attribute;
+        return attributes;
     }
 };
 }

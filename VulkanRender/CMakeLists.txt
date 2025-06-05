@@ -8,7 +8,6 @@ set(RENDER_HEADER
 	VulkanRender/Texture.h
 	VulkanRender/Memory/Memory.h
 	VulkanRender/Vertex.h
-	VulkanRender/Uniform.h
 	VulkanRender/vkRender.h
 )
 
