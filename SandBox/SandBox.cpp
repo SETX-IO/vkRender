@@ -4,7 +4,8 @@
 #include "Context.h"
 #include "Renderer.h"
 #include "fmt/args.h"
-#include "fmt/color.h"
+// #include "fmt/color.h"
+// #include "Logger/Logger.h"
 
 GLFWwindow* window = nullptr;
 vkRender::Context *context = nullptr;
@@ -64,13 +65,15 @@ void init()
     
     // context->setFrameSize(glm::vec2(width, height));
 
-    fmt::print(fg(fmt::color::crimson) | fmt::emphasis::bold,
-             "[{}] Hello, {}!\n", "Error", "world");
+    // vkRender::Logger log;
+    //
+    // log.log("Hello World");
+    
 }
 
 
 void mainLoop()
 {
     renderer->draw();
-    context->draw();
+    // context->draw();
 }

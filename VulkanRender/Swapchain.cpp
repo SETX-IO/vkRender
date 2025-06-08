@@ -22,6 +22,7 @@ bool Swapchain::init()
 {
     queryInfo();
     createSwapChain();
+    createRenderPass();
     createFramebuffer();
     
     return true;
@@ -31,9 +32,7 @@ void Swapchain::reCreate()
 {
     release();
     
-    queryInfo();
-    createSwapChain();
-    createFramebuffer();
+    init();
 }
 
 ImageView Swapchain::newImageView(const Image& image, Format format)
@@ -62,6 +61,7 @@ void Swapchain::release() const
         device.destroyImageView(imageView);
     }
     device.destroySwapchainKHR(swapchain_);
+    device.destroyRenderPass(renderPass_);
 }
 
 void Swapchain::queryInfo()
@@ -155,7 +155,7 @@ void Swapchain::createFramebuffer()
         std::array attachment = {imageViews[i]};
         
         framebufferInfo
-            .setRenderPass(Context::getInstance()->getRenderPass())
+            .setRenderPass(renderPass_)
             .setAttachmentCount(1)
             .setAttachments(attachment)
             .setWidth(info.extent.width)
@@ -166,6 +166,41 @@ void Swapchain::createFramebuffer()
     }
 }
 
+void Swapchain::createRenderPass()
+{
+    RenderPassCreateInfo createInfo;
+    
+    AttachmentDescription colorAttachment;
+    colorAttachment
+        .setFormat(info.format.format)
+        .setSamples(SampleCountFlagBits::e1)
+        .setLoadOp(AttachmentLoadOp::eClear)
+        .setStoreOp(AttachmentStoreOp::eStore)
+        .setStencilLoadOp(AttachmentLoadOp::eDontCare)
+        .setStencilStoreOp(AttachmentStoreOp::eDontCare)
+        .setInitialLayout(ImageLayout::eUndefined)
+        .setFinalLayout(ImageLayout::ePresentSrcKHR);
+    createInfo.setAttachments(colorAttachment);
+    
+    AttachmentReference colorAttachmentRef;
+    colorAttachmentRef.setLayout(ImageLayout::eColorAttachmentOptimal);
+
+    SubpassDescription subpass;
+    subpass
+        .setPipelineBindPoint(PipelineBindPoint::eGraphics)
+        .setColorAttachments(colorAttachmentRef);
+    createInfo.setSubpasses(subpass);
+
+    SubpassDependency dependency;
+    dependency
+        .setSrcSubpass(VK_SUBPASS_EXTERNAL)
+        .setSrcStageMask(PipelineStageFlagBits::eColorAttachmentOutput)
+        .setDstStageMask(PipelineStageFlagBits::eColorAttachmentOutput)
+        .setDstAccessMask(AccessFlagBits::eColorAttachmentWrite);
+    createInfo.setDependencies(dependency);
+
+    renderPass_ = Device::getInstance()->getDevice().createRenderPass(createInfo);
+}
 }
 
 

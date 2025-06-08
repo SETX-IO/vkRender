@@ -23,6 +23,7 @@ public:
 
     static vk::ImageView newImageView(const vk::Image &image, vk::Format format);
     std::vector<vk::Framebuffer> &getFrameBuffers() {return framebuffers_;}
+    vk::RenderPass &getRenderPass() {return renderPass_;}
     vk::SwapchainKHR &get() {return swapchain_;}
 
     void release() const;
@@ -31,11 +32,13 @@ private:
     std::vector<vk::ImageView> imageViews;
     std::vector<vk::Framebuffer> framebuffers_;
     vk::SwapchainKHR swapchain_;
+    vk::RenderPass renderPass_ = nullptr;
     SwapchainInfo info;
     
     void queryInfo();
     void createSwapChain();
     void createFramebuffer();
+    void createRenderPass();
 };
 
 }
