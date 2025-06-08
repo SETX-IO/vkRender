@@ -1,6 +1,4 @@
 ﻿#pragma once
-#include <fstream>
-
 #include "glm/glm.hpp"
 
 #include "vkRender.h"
@@ -21,27 +19,6 @@ struct UniformObj
     glm::mat4 view;
     glm::mat4 proj;
 };
-
-static std::vector<char> readFile(const std::string& filename)
-{
-    std::ifstream file(filename, std::ios::binary | std::ios::ate);
-
-    if (!file.is_open())
-    {
-        std::cout << "not fount File: " << filename << std::endl;
-        return {};
-    }
-
-    size_t fileSize = file.tellg();
-    std::vector<char> buffer(fileSize);
-
-    file.seekg(0);
-    file.read(buffer.data(), fileSize);
-
-    file.close();
-
-    return buffer;
-}
 
 // TODO: 将渲染有关的提出去单独写一个 Renderer 类
 class Context final

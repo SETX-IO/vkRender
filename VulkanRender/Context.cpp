@@ -1,9 +1,8 @@
 ﻿#include "Context.h"
 
-#include <map>
-
 #include "CommandManager.h"
 #include "Device.h"
+#include "Shader.h"
 #include "Texture.h"
 #include "Vertex.h"
 
@@ -260,32 +259,21 @@ void Context::createRenderPass()
 
 bool Context::createGraphicsPipeLine()
 {
-    auto vertSource = readFile("E:/Documents/Project/vkRender/build/bin/Debug/Resouces/vert.spv");
-    auto fragSource = readFile("E:/Documents/Project/vkRender/build/bin/Debug/Resouces/frag.spv");
-
-    auto vertShader = createShaderModel(vertSource);
-    auto fragShader = createShaderModel(fragSource);
 
     GraphicsPipelineCreateInfo createInfo;
     
-    PipelineShaderStageCreateInfo vertCreateInfo;
-    PipelineShaderStageCreateInfo fragCreateInfo;
+    PipelineShaderStageCreateInfo vertCreateInfo =
+        Shader::create("E:/Documents/Project/vkRender/build/bin/Debug/Resouces/vert.spv", ShaderStageFlagBits::eVertex);
     
-    vertCreateInfo
-        .setStage(ShaderStageFlagBits::eVertex)
-        .setModule(vertShader)
-        .setPName("main");
+    PipelineShaderStageCreateInfo fragCreateInfo
+    = Shader::create("E:/Documents/Project/vkRender/build/bin/Debug/Resouces/frag.spv", ShaderStageFlagBits::eFragment);
 
-    fragCreateInfo
-        .setStage(ShaderStageFlagBits::eFragment)
-        .setModule(fragShader)
-        .setPName("main");
 
     std::array shaderStages = {vertCreateInfo, fragCreateInfo};
     createInfo.setStages(shaderStages);
     
     std::vector dynamicStates = {DynamicState::eViewport, DynamicState::eScissor};
-
+    
     PipelineDynamicStateCreateInfo dynamicStateCreateInfo;
     dynamicStateCreateInfo.setDynamicStates(dynamicStates);
     
@@ -313,11 +301,11 @@ bool Context::createGraphicsPipeLine()
     viewport
         .setHeight(frameSize.y).setWidth(frameSize.x)
         .setMaxDepth(1.f);
-
+    
     Rect2D scissor;
     scissor
         .setExtent({static_cast<uint32_t>(frameSize.x), static_cast<uint32_t>(frameSize.y)});
-
+    
     PipelineViewportStateCreateInfo viewportState;
     viewportState
         .setViewports(viewport)
@@ -378,8 +366,8 @@ bool Context::createGraphicsPipeLine()
     }
     graphicsPipeline = result.value;
     
-    device.destroyShaderModule(vertShader);
-    device.destroyShaderModule(fragShader);
+    device.destroyShaderModule(vertCreateInfo.module);
+    device.destroyShaderModule(fragCreateInfo.module);
 
     return true;
 }

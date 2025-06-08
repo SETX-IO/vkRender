@@ -1,8 +1,10 @@
 #define GLFW_INCLUDE_VULKAN
-#include <glfw3.h>
+#include <GLFW/glfw3.h>
 
 #include "Context.h"
 #include "Renderer.h"
+#include "fmt/args.h"
+#include "fmt/color.h"
 
 GLFWwindow* window = nullptr;
 vkRender::Context *context = nullptr;
@@ -61,10 +63,14 @@ void init()
     // glfwGetWindowFrameSize(window, nullptr, nullptr, &width, &height);
     
     // context->setFrameSize(glm::vec2(width, height));
+
+    fmt::print(fg(fmt::color::crimson) | fmt::emphasis::bold,
+             "[{}] Hello, {}!\n", "Error", "world");
 }
 
 
 void mainLoop()
 {
+    renderer->draw();
     context->draw();
 }

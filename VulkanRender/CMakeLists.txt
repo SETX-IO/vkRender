@@ -5,6 +5,7 @@ set(RENDER_HEADER
 	VulkanRender/CommandManager.h
 	VulkanRender/Renderer.h
 	VulkanRender/Buffer.h
+	VulkanRender/Shader.h
 	VulkanRender/Texture.h
 	VulkanRender/Memory/Memory.h
 	VulkanRender/Vertex.h
@@ -18,6 +19,7 @@ set(RENDER_SRC
 	VulkanRender/CommandManager.cpp
 	VulkanRender/Renderer.cpp
 	VulkanRender/Buffer.cpp
+	VulkanRender/Shader.cpp
 	VulkanRender/Texture.cpp
 	VulkanRender/Memory/Memory.cpp
 )
