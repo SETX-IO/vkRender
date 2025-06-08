@@ -1,0 +1,6 @@
+[submodule "library/fmt"]
+	path = library/fmt
+	url = https://github.com/fmtlib/fmt.git
+[submodule "library/glfw"]
+	path = library/glfw
+	url = https://github.com/glfw/glfw.git
