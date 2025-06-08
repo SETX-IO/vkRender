@@ -6,7 +6,7 @@ namespace vkRender
 {
 struct Vertex
 {
-    float x, y, w, h;
+    float x, y, z, w, h;
     
     static vk::VertexInputBindingDescription getBinding()
     {
@@ -23,14 +23,14 @@ struct Vertex
     {
         std::array<vk::VertexInputAttributeDescription, 2> attributes;
         attributes[0]
-            .setFormat(vk::Format::eR32G32Sfloat)
+            .setFormat(vk::Format::eR32G32B32Sfloat)
             .setLocation(0)
             .setOffset(0);
 
         attributes[1]
             .setFormat(vk::Format::eR32G32Sfloat)
             .setLocation(1)
-            .setOffset(sizeof(float) * 2);
+            .setOffset(sizeof(float) * 3);
     
         return attributes;
     }

@@ -20,6 +20,16 @@ Texture* Texture::createFormFile(const std::string& fileName)
     return nullptr;
 }
 
+Texture* Texture::createDepth(uint32_t w, uint32_t h)
+{
+    Texture *texture = new (std::nothrow) Texture(w, h);
+    if (texture && texture->init())
+    {
+        return texture;
+    }
+    return nullptr;
+}
+
 bool Texture::init(const std::string& fileName)
 {
     if (!(data_ = stbi_load(fileName.c_str(), &width_, &height_, & TexChannels, STBI_rgb_alpha)))
@@ -27,12 +37,13 @@ bool Texture::init(const std::string& fileName)
        return false;
     }
 
-    createImage();
+    format_ = Format::eR8G8B8A8Srgb;
+    createImage(ImageUsageFlagBits::eTransferDst | ImageUsageFlagBits::eSampled);
     
     auto staging = Buffer::create(BufferUsageFlagBits::eTransferSrc, width_ * height_ * 4);
     staging->data(data_);
 
-    transitionLayout(Format::eR8G8B8A8Srgb, ImageLayout::eUndefined, ImageLayout::eTransferDstOptimal);
+    transitionLayout(format_, ImageLayout::eUndefined, ImageLayout::eTransferDstOptimal);
 
     BufferImageCopy region;
     region
@@ -45,13 +56,41 @@ bool Texture::init(const std::string& fileName)
         cmd.copyBufferToImage(staging->getBuffer(), texture_, ImageLayout::eTransferDstOptimal, region);
     });
     
-    transitionLayout(Format::eR8G8B8A8Srgb, ImageLayout::eTransferDstOptimal, ImageLayout::eShaderReadOnlyOptimal);
+    transitionLayout(format_, ImageLayout::eTransferDstOptimal, ImageLayout::eShaderReadOnlyOptimal);
     
     staging->release();
 
-    textureView_ = Swapchain::newImageView(texture_, Format::eR8G8B8A8Srgb);
+    textureView_ = Swapchain::newImageView(texture_, format_);
 
     createSampler();
+    
+    return true;
+}
+
+bool Texture::init()
+{
+    std::vector candidates = {Format::eD32Sfloat, Format::eD32SfloatS8Uint, Format::eD24UnormS8Uint};
+    ImageTiling tiling = ImageTiling::eOptimal;
+    FormatFeatureFlags feature = FormatFeatureFlagBits::eDepthStencilAttachment;
+    
+    for (Format format : candidates)
+    {
+        auto properties = Device::getInstance()->getPDevice().getFormatProperties(format);
+
+        if (tiling == ImageTiling::eLinear && (properties.optimalTilingFeatures & feature) == feature)
+        {
+            format_ = format;
+        }
+        else if (tiling == ImageTiling::eOptimal && (properties.optimalTilingFeatures & feature) == feature)
+        {
+            format_ = format;
+        }
+    }
+    
+    createImage(ImageUsageFlagBits::eDepthStencilAttachment);
+    textureView_ = Swapchain::newImageView(texture_, format_, ImageAspectFlagBits::eDepth);
+
+    transitionLayout(format_, ImageLayout::eUndefined, ImageLayout::eDepthStencilAttachmentOptimal);
     
     return true;
 }
@@ -73,14 +112,28 @@ void Texture::transitionLayout(Format format, ImageLayout old, ImageLayout layou
     PipelineStageFlags destinationStage;
 
     ImageMemoryBarrier barrier;
+    ImageAspectFlags aspect;
+
     barrier
         .setImage(texture_)
         .setOldLayout(old)
         .setNewLayout(layout)
         .setDstQueueFamilyIndex(QueueFamilyIgnored)
-        .setSrcQueueFamilyIndex(QueueFamilyIgnored)
-        .setSubresourceRange({ImageAspectFlagBits::eColor, 0, 1, 0, 1});
+        .setSrcQueueFamilyIndex(QueueFamilyIgnored);
 
+    if (layout == ImageLayout::eDepthStencilAttachmentOptimal)
+    {
+        aspect = ImageAspectFlagBits::eDepth;
+        if (format == Format::eD32SfloatS8Uint || format == Format::eD24UnormS8Uint)
+        {
+            aspect |= ImageAspectFlagBits::eStencil;
+        }
+    }
+    else
+    {
+        aspect = ImageAspectFlagBits::eColor;
+    }
+    
     if (old == ImageLayout::eUndefined && layout == ImageLayout::eTransferDstOptimal)
     {
         barrier.setDstAccessMask(AccessFlagBits::eTransferWrite);
@@ -95,7 +148,15 @@ void Texture::transitionLayout(Format format, ImageLayout old, ImageLayout layou
 
         sourceStage = PipelineStageFlagBits::eTransfer;
         destinationStage = PipelineStageFlagBits::eFragmentShader;
+    } else if (old == ImageLayout::eUndefined && layout == ImageLayout::eDepthStencilAttachmentOptimal)
+    {
+        barrier.setDstAccessMask(AccessFlagBits::eDepthStencilAttachmentRead |AccessFlagBits::eDepthStencilAttachmentWrite);
+
+        sourceStage = PipelineStageFlagBits::eTopOfPipe;
+        destinationStage = PipelineStageFlagBits::eEarlyFragmentTests;
     }
+
+    barrier.setSubresourceRange({aspect, 0, 1, 0, 1});
     
     CommandManager::Instance()->record([&](const CommandBuffer &cmd)
     {
@@ -130,7 +191,12 @@ void Texture::release() const
     Device::getInstance()->getDevice().destroyImageView(textureView_);
 }
 
-void Texture::createImage()
+Texture::Texture(uint32_t w, uint32_t h):
+width_(w), height_(h), format_(Format::eUndefined)
+{
+}
+
+void Texture::createImage(ImageUsageFlags usage)
 {
     ImageCreateInfo createInfo;
     createInfo
@@ -138,10 +204,10 @@ void Texture::createImage()
         .setExtent({static_cast<uint32_t>(width_), static_cast<uint32_t>(height_), 1})
         .setMipLevels(1)
         .setArrayLayers(1)
-        .setFormat(Format::eR8G8B8A8Srgb)
+        .setFormat(format_)
         .setTiling(ImageTiling::eOptimal)
         .setInitialLayout(ImageLayout::eUndefined)
-        .setUsage(ImageUsageFlagBits::eTransferDst | ImageUsageFlagBits::eSampled)
+        .setUsage(usage)
         .setSharingMode(SharingMode::eExclusive)
         .setSamples(SampleCountFlagBits::e1);
 

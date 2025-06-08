@@ -78,12 +78,15 @@ void Renderer::draw()
     CommandBufferBeginInfo beginInfo;
 
     cmdBuffers_[currentFrame].begin(beginInfo);
-    ClearValue clearColor({{0.1f, 0.1f, 0.1f, 1.0f}});
+    std::array<ClearValue, 2> clearValues;
+    clearValues[0].setColor({0.1f, 0.1f, 0.1f, 1.0f});
+    clearValues[1].setDepthStencil({1.f, 0});
+    
     RenderPassBeginInfo PassBeginInfo;
     PassBeginInfo.setRenderPass(swapchain_->getRenderPass());
     PassBeginInfo.setFramebuffer(swapchain_->getFrameBuffers()[currentFrame]);
     PassBeginInfo.setRenderArea({{0, 0}, {static_cast<uint32_t>(frameSize.x),static_cast<uint32_t>(frameSize.y)}});
-    PassBeginInfo.setClearValues(clearColor);
+    PassBeginInfo.setClearValues(clearValues);
 
     cmdBuffers_[currentFrame].beginRenderPass(&PassBeginInfo, {});
     cmdBuffers_[currentFrame].bindPipeline(PipelineBindPoint::eGraphics, graphicsPipeline);
@@ -100,7 +103,7 @@ void Renderer::draw()
     cmdBuffers_[currentFrame].bindIndexBuffer(indexBuffer_->getBuffer(), 0, IndexType::eUint16);
     cmdBuffers_[currentFrame].bindDescriptorSets(PipelineBindPoint::eGraphics, pipelineLayout, 0, 1, &descriptorSets_[currentFrame], 0 , nullptr);
     
-    cmdBuffers_[currentFrame].drawIndexed(6, 1, 0, 0, 0);
+    cmdBuffers_[currentFrame].drawIndexed(12, 1, 0, 0, 0);
     
     cmdBuffers_[currentFrame].endRenderPass();
     cmdBuffers_[currentFrame].end();
@@ -153,7 +156,7 @@ void Renderer::createDescriptorPool()
         .setPoolSizes(poolSize)
         .setMaxSets(MAX_FRAME_IN_FLIGHT);
 
-    descriptorPool_ = Device::getInstance()->getDevice().createDescriptorPool(createInfo);  
+    descriptorPool_ = Device::getInstance()->getDevice().createDescriptorPool(createInfo);
 }
 
 void Renderer::createDescriptorSets()
@@ -224,16 +227,13 @@ void Renderer::createPipeline()
     
     PipelineShaderStageCreateInfo fragCreateInfo
     = Shader::create("E:/Documents/Project/vkRender/build/bin/Debug/Resouces/frag.spv", ShaderStageFlagBits::eFragment);
-
-
+    
     std::array shaderStages = {vertCreateInfo, fragCreateInfo};
     createInfo.setStages(shaderStages);
     
     std::vector dynamicStates = {DynamicState::eViewport, DynamicState::eScissor};
-    
     PipelineDynamicStateCreateInfo dynamicStateCreateInfo;
     dynamicStateCreateInfo.setDynamicStates(dynamicStates);
-    
     createInfo.setPDynamicState(&dynamicStateCreateInfo);
 
     // 顶点输入
@@ -248,9 +248,7 @@ void Renderer::createPipeline()
 
     // 输入汇编
     PipelineInputAssemblyStateCreateInfo inputAssemblyInfo;
-    inputAssemblyInfo
-        .setTopology(PrimitiveTopology::eTriangleList)
-        .setPrimitiveRestartEnable(false);
+    inputAssemblyInfo.setTopology(PrimitiveTopology::eTriangleList);
     createInfo.setPInputAssemblyState(&inputAssemblyInfo);
 
     // 视口和剪裁矩形
@@ -260,14 +258,12 @@ void Renderer::createPipeline()
         .setMaxDepth(1.f);
     
     Rect2D scissor;
-    scissor
-        .setExtent({static_cast<uint32_t>(frameSize.x), static_cast<uint32_t>(frameSize.y)});
+    scissor.setExtent({static_cast<uint32_t>(frameSize.x), static_cast<uint32_t>(frameSize.y)});
     
     PipelineViewportStateCreateInfo viewportState;
     viewportState
         .setViewports(viewport)
         .setScissors(scissor);
-    
     createInfo.setPViewportState(&viewportState);
 
     // 光栅化
@@ -277,7 +273,6 @@ void Renderer::createPipeline()
         .setLineWidth(1.f)
         .setCullMode(CullModeFlagBits::eBack)
         .setFrontFace(FrontFace::eCounterClockwise);
-
     createInfo.setPRasterizationState(&rasterization);
 
     PipelineMultisampleStateCreateInfo multisampleState;
@@ -303,6 +298,14 @@ void Renderer::createPipeline()
         .setAttachments(colorBlendAttachment);
     
     createInfo.setPColorBlendState(&colorBlending);
+
+    PipelineDepthStencilStateCreateInfo depthStencil;
+    depthStencil
+        .setDepthTestEnable(true)
+        .setDepthWriteEnable(true)
+        .setDepthCompareOp(CompareOp::eLess)
+        .setMaxDepthBounds(1.f);
+    createInfo.setPDepthStencilState(&depthStencil);
     
     PipelineLayoutCreateInfo layoutCrateInfo;
     layoutCrateInfo.setSetLayouts(pipelineSetLayout);
@@ -330,13 +333,21 @@ void Renderer::createBuffer()
 {
     const std::vector<Vertex> vertexes =
     {
-        {-0.8f, -0.8f, 1.f, 0.f},
-        {0.8f, -0.8f, 0.f, 0.f},
-        {0.8f, 0.8f, 0.f, 1.f},
-        {-0.8f, 0.8f, 1.f, 1.f}
+        {-0.8f, -0.8f, 0.f, 1.f, 0.f},
+        {0.8f, -0.8f, 0.f, 0.f, 0.f},
+        {0.8f, 0.8f, 0.f, 0.f, 1.f},
+        {-0.8f, 0.8f, 0.f, 1.f, 1.f},
+
+        {-0.8f, -0.8f, -0.8f, 1.f, 0.f},
+        {0.8f, -0.8f, -0.8f, 0.f, 0.f},
+        {0.8f, 0.8f, -0.8f, 0.f, 1.f},
+        {-0.8f, 0.8f, -0.8f, 1.f, 1.f},
     };
 
-    const std::vector<uint16_t> indices = {0, 1, 2, 2, 3, 0};
+    const std::vector<uint16_t> indices = {
+        0, 1, 2, 2, 3, 0,
+        4, 5, 6, 6, 7, 4,
+    };
     
     auto stagingBuffer = Buffer::create(BufferUsageFlagBits::eTransferSrc, sizeof(vertexes[0]) * vertexes.size());
     stagingBuffer->data(vertexes.data());

@@ -2,6 +2,7 @@
 
 #include "Context.h"
 #include "Device.h"
+#include "Memory/Memory.h"
 
 namespace vkRender
 {
@@ -22,6 +23,8 @@ bool Swapchain::init()
 {
     queryInfo();
     createSwapChain();
+
+    depthTexture = Texture::createDepth(info.extent.width, info.extent.height);
     createRenderPass();
     createFramebuffer();
     
@@ -35,9 +38,9 @@ void Swapchain::reCreate()
     init();
 }
 
-ImageView Swapchain::newImageView(const Image& image, Format format)
+ImageView Swapchain::newImageView(const Image& image, Format format, ImageAspectFlags aspect)
 {
-    constexpr ImageSubresourceRange subresourceRange(ImageAspectFlagBits::eColor, 0, 1, 0, 1);
+    ImageSubresourceRange subresourceRange(aspect, 0, 1, 0, 1);
     
     ImageViewCreateInfo createInfo;
     createInfo
@@ -52,6 +55,7 @@ ImageView Swapchain::newImageView(const Image& image, Format format)
 void Swapchain::release() const
 {
     auto device = Device::getInstance()->getDevice();
+    
     for (int i = 0; i < imageViews.size(); ++i)
     {
         auto imageView = imageViews[i];
@@ -107,10 +111,10 @@ void Swapchain::queryInfo()
 
 void Swapchain::createSwapChain()
 {
-    const auto context = Device::getInstance();
+    const auto device = Device::getInstance();
     
     SwapchainCreateInfoKHR createInfo;
-    std::array indices = {context->indices_.graphicsFamily.value(), context->indices_.presentFamily.value()};
+    std::array indices = {device->indices_.graphicsFamily.value(), device->indices_.presentFamily.value()};
     
     createInfo
         .setSurface(Context::getInstance()->getSurface())
@@ -124,18 +128,18 @@ void Swapchain::createSwapChain()
         .setPresentMode(info.presentMode)
         .setPreTransform(info.transform);
 
-    if (context->indices_.equal())
+    if (device->indices_.equal())
     {
-        createInfo.setQueueFamilyIndices(context->indices_.graphicsFamily.value());
+        createInfo.setQueueFamilyIndices(device->indices_.graphicsFamily.value());
     }
     else
     {
         createInfo.setQueueFamilyIndices(indices);
     }
 
-    createInfo.setImageSharingMode(context->indices_.equal() ? SharingMode::eExclusive : SharingMode::eConcurrent);
+    createInfo.setImageSharingMode(device->indices_.equal() ? SharingMode::eExclusive : SharingMode::eConcurrent);
 
-    swapchain_ = context->getDevice().createSwapchainKHR(createInfo);
+    swapchain_ = device->getDevice().createSwapchainKHR(createInfo);
 }
 
 void Swapchain::createFramebuffer()
@@ -152,11 +156,10 @@ void Swapchain::createFramebuffer()
         imageViews[i] = newImageView(images[i], info.format.format);
 
         FramebufferCreateInfo framebufferInfo;
-        std::array attachment = {imageViews[i]};
+        std::array attachment = {imageViews[i], depthTexture->getView()};
         
         framebufferInfo
             .setRenderPass(renderPass_)
-            .setAttachmentCount(1)
             .setAttachments(attachment)
             .setWidth(info.extent.width)
             .setHeight(info.extent.height)
@@ -180,23 +183,43 @@ void Swapchain::createRenderPass()
         .setStencilStoreOp(AttachmentStoreOp::eDontCare)
         .setInitialLayout(ImageLayout::eUndefined)
         .setFinalLayout(ImageLayout::ePresentSrcKHR);
-    createInfo.setAttachments(colorAttachment);
+
+    AttachmentDescription depthAttachment;
+    depthAttachment
+        .setFormat(depthTexture->getFormat())
+        .setSamples(SampleCountFlagBits::e1)
+        .setLoadOp(AttachmentLoadOp::eClear)
+        .setStoreOp(AttachmentStoreOp::eDontCare)
+        .setStencilLoadOp(AttachmentLoadOp::eDontCare)
+        .setStencilStoreOp(AttachmentStoreOp::eDontCare)
+        .setInitialLayout(ImageLayout::eUndefined)
+        .setFinalLayout(ImageLayout::ePresentSrcKHR);
+
+    std::vector attachments = {colorAttachment, depthAttachment};
+    createInfo.setAttachments(attachments);
     
     AttachmentReference colorAttachmentRef;
     colorAttachmentRef.setLayout(ImageLayout::eColorAttachmentOptimal);
 
+    AttachmentReference depthAttachmentRef;
+    depthAttachmentRef
+        .setLayout(ImageLayout::eDepthStencilAttachmentOptimal)
+        .setAttachment(1);
+
     SubpassDescription subpass;
     subpass
         .setPipelineBindPoint(PipelineBindPoint::eGraphics)
-        .setColorAttachments(colorAttachmentRef);
+        .setColorAttachments(colorAttachmentRef)
+        .setPDepthStencilAttachment(&depthAttachmentRef);
     createInfo.setSubpasses(subpass);
 
     SubpassDependency dependency;
     dependency
         .setSrcSubpass(VK_SUBPASS_EXTERNAL)
-        .setSrcStageMask(PipelineStageFlagBits::eColorAttachmentOutput)
-        .setDstStageMask(PipelineStageFlagBits::eColorAttachmentOutput)
-        .setDstAccessMask(AccessFlagBits::eColorAttachmentWrite);
+        .setSrcStageMask(PipelineStageFlagBits::eColorAttachmentOutput | PipelineStageFlagBits::eLateFragmentTests)
+        .setSrcAccessMask(AccessFlagBits::eDepthStencilAttachmentWrite)
+        .setDstStageMask(PipelineStageFlagBits::eColorAttachmentOutput | PipelineStageFlagBits::eEarlyFragmentTests)
+        .setDstAccessMask(AccessFlagBits::eColorAttachmentWrite | AccessFlagBits::eDepthStencilAttachmentWrite);
     createInfo.setDependencies(dependency);
 
     renderPass_ = Device::getInstance()->getDevice().createRenderPass(createInfo);

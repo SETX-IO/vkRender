@@ -10,6 +10,7 @@ set(RENDER_HEADER
 	VulkanRender/Memory/Memory.h
 	VulkanRender/Logger/Logger.h
 	VulkanRender/Vertex.h
+	VulkanRender/Release.h
 	VulkanRender/vkRender.h
 )
 

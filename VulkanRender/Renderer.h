@@ -7,6 +7,7 @@
 
 namespace vkRender
 {
+// TODO: 将 Uniform 相关的功能抽取至 Uniform 类中
 class Renderer
 {
 public:

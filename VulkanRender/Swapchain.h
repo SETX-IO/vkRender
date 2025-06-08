@@ -2,6 +2,8 @@
 
 #include <vkRender.h>
 
+#include "Texture.h"
+
 namespace vkRender
 {
 struct SwapchainInfo
@@ -21,7 +23,7 @@ public:
     bool init();
     void reCreate();
 
-    static vk::ImageView newImageView(const vk::Image &image, vk::Format format);
+    static vk::ImageView newImageView(const vk::Image &image, vk::Format format, vk::ImageAspectFlags aspect = vk::ImageAspectFlagBits::eColor);
     std::vector<vk::Framebuffer> &getFrameBuffers() {return framebuffers_;}
     vk::RenderPass &getRenderPass() {return renderPass_;}
     vk::SwapchainKHR &get() {return swapchain_;}
@@ -32,8 +34,10 @@ private:
     std::vector<vk::ImageView> imageViews;
     std::vector<vk::Framebuffer> framebuffers_;
     vk::SwapchainKHR swapchain_;
-    vk::RenderPass renderPass_ = nullptr;
-    SwapchainInfo info;
+    vk::RenderPass renderPass_;
+
+    Texture *depthTexture = nullptr;
+    SwapchainInfo info{};
     
     void queryInfo();
     void createSwapChain();

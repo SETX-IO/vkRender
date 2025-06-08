@@ -75,5 +75,4 @@ void init()
 void mainLoop()
 {
     renderer->draw();
-    // context->draw();
 }

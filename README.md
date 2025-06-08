@@ -6,7 +6,6 @@
 可能内置一个自己写的DeviceMemory分配器...
 
 # 库
----
-[GLFW]()
-[fmt]()
+[GLFW](https://github.com/glfw/glfw)
+[fmt](https://github.com/fmtlib/fmt/tree/5860688d7e5dac0f52d4ac13ff859ca04e05f0ce)
 [vulkan](https://www.vulkan.org/)
