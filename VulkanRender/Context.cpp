@@ -1,7 +1,7 @@
 ﻿#include "Context.h"
 
 #include "CommandManager.h"
-#include "Shader.h"
+#include "Device.h"
 #include "Memory/Memory.h"
 
 namespace vkRender
@@ -22,13 +22,6 @@ Context* Context::getInstance(const std::vector<const char*>& extensions, const 
 
 Context::~Context()
 {
-    vkInstance.destroySurfaceKHR(surface);
-    vkInstance.destroy();
-
-    CommandManager::Instance()->release();
-
-    Memory::release();
-    
     s_instance = nullptr;
 }
 
@@ -44,6 +37,15 @@ bool Context::init(const std::vector<const char*>& extensions, const CreateSurfa
     }
     
     return result;
+}
+
+void Context::release() const
+{
+    Memory::release();
+    Device::getInstance()->release();
+    
+    vkInstance.destroySurfaceKHR(surface);
+    vkInstance.destroy();
 }
 
 

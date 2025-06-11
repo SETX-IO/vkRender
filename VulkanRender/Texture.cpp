@@ -75,7 +75,7 @@ bool Texture::init()
     
     for (Format format : candidates)
     {
-        auto properties = Device::getInstance()->getPDevice().getFormatProperties(format);
+        auto properties = Device::getInstance()->getGPU().getFormatProperties(format);
 
         if (tiling == ImageTiling::eLinear && (properties.optimalTilingFeatures & feature) == feature)
         {
@@ -186,7 +186,6 @@ void Texture::release() const
 {
     stbi_image_free(data_);
     Device::getInstance()->getDevice().destroyImage(texture_);
-    Device::getInstance()->getDevice().freeMemory(memory_);
     Device::getInstance()->getDevice().destroySampler(textureSampler_);
     Device::getInstance()->getDevice().destroyImageView(textureView_);
 }
@@ -212,12 +211,8 @@ void Texture::createImage(ImageUsageFlags usage)
         .setSamples(SampleCountFlagBits::e1);
 
     texture_ = Device::getInstance()->getDevice().createImage(createInfo);
-
-    MemoryRequirements memory = Device::getInstance()->getDevice().getImageMemoryRequirements(texture_);
-
-    memory_ = Memory::AllocateMemory(MemoryPropertyFlagBits::eDeviceLocal, memory);
-
-    Device::getInstance()->getDevice().bindImageMemory(texture_, memory_, 0);
+    
+    Memory::BindImage(texture_, MemoryPropertyFlagBits::eDeviceLocal);
 }
 
 }

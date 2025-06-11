@@ -4,3 +4,6 @@
 [submodule "library/glfw"]
 	path = library/glfw
 	url = https://github.com/glfw/glfw.git
+[submodule "library/freetype"]
+	path = library/freetype
+	url = https://github.com/freetype/freetype.git

@@ -18,9 +18,9 @@ public:
 
     void draw();
 private:
-    Texture *texture_;
+    Texture *texture_ = nullptr;
     
-    Swapchain *swapchain_;
+    Swapchain *swapchain_ = nullptr;
     
     vk::Pipeline graphicsPipeline;
     vk::PipelineLayout pipelineLayout;

@@ -33,6 +33,8 @@ int main(int argc, char* argv[])
 
     glfwDestroyWindow(window);
     glfwTerminate();
+    renderer->release();
+    context->release();
     return 0;
 }
 

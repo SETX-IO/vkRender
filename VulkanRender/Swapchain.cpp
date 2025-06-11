@@ -66,11 +66,12 @@ void Swapchain::release() const
     }
     device.destroySwapchainKHR(swapchain_);
     device.destroyRenderPass(renderPass_);
+    depthTexture->release();
 }
 
 void Swapchain::queryInfo()
 {
-    const auto& pDevice = Device::getInstance()->getPDevice();
+    const auto& pDevice = Device::getInstance()->getGPU();
     const auto& surface = Context::getInstance()->getSurface();
     auto swapChainSupport = pDevice.getSurfaceCapabilitiesKHR(surface);
     auto capabilities = pDevice.getSurfaceCapabilitiesKHR(surface);

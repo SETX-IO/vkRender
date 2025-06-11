@@ -30,23 +30,49 @@ bool Device::init()
     if (pickPhysicalDevice())
     {
         createLogicalDevice();
-        properties = pDevice_.getProperties();
+        properties = GPU_.getProperties();
         result = true;
     }
     
     return result;
 }
 
-Semaphore Device::newSemaphore() const
+void Device::release()
 {
-    constexpr  SemaphoreCreateInfo createInfo;
-    return device_.createSemaphore(createInfo);
+    int semaphoreCount = semaphoreStack_.size();
+    for (int i = 0; i < semaphoreCount; ++i)
+    {
+        auto semaphore = semaphoreStack_.top();
+        device_.destroySemaphore(semaphore);
+        semaphoreStack_.pop();
+    }
+
+    int fenceCount = fenceStack_.size();
+    for (int i = 0; i < fenceCount; ++i)
+    {
+        auto fence = fenceStack_.top();
+        device_.destroyFence(fence);
+        fenceStack_.pop();
+    }
+    device_.destroy();
 }
 
-Fence Device::newFence() const
+Semaphore &Device::newSemaphore()
+{
+    constexpr  SemaphoreCreateInfo createInfo;
+    auto semaphore = device_.createSemaphore(createInfo);
+    semaphoreStack_.push(semaphore);
+    
+    return semaphoreStack_.top();
+}
+
+Fence &Device::newFence()
 {
     constexpr FenceCreateInfo createInfo{FenceCreateFlagBits::eSignaled};
-    return device_.createFence(createInfo);
+    auto fence = device_.createFence(createInfo);
+    fenceStack_.push(fence);
+    
+    return fenceStack_.top();
 }
 
 bool Device::pickPhysicalDevice()
@@ -64,7 +90,6 @@ bool Device::pickPhysicalDevice()
         auto presentMode = physicalDevice.getSurfacePresentModesKHR(surface);
         auto feature = physicalDevice.getFeatures();
         
-         
         for (const auto & extensionProperty : extensionProperties)
         {
             requiredExtensions.erase(extensionProperty.extensionName);
@@ -73,10 +98,10 @@ bool Device::pickPhysicalDevice()
         if (physicalDevice.getFeatures().geometryShader && requiredExtensions.empty()
             && !format.empty() && !presentMode.empty() && feature.samplerAnisotropy)
         {
-            pDevice_ = physicalDevice;
+            GPU_ = physicalDevice;
             std::cout << physicalDevice.getProperties().deviceName << "\n";
 
-            indices_ = QueueFamilyIndices::find(pDevice_, surface);
+            indices_ = QueueFamilyIndices::find(GPU_, surface);
             
             return true;
         }
@@ -107,7 +132,7 @@ void Device::createLogicalDevice()
         .setPEnabledExtensionNames(deviceExtension)
         .setQueueCreateInfos(queueCreateInfos);
     
-    device_ = pDevice_.createDevice(createInfo);
+    device_ = GPU_.createDevice(createInfo);
 
     graphicsQueue = device_.getQueue(indices_.graphicsFamily.value(), 0);
     presentQueue = device_.getQueue(indices_.presentFamily.value(), 0);

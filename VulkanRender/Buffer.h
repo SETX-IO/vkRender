@@ -18,6 +18,7 @@ public:
     void release() const;
     
     vk::Buffer &getBuffer() {return buffer_;}
+    vk::DescriptorBufferInfo newDescriptor();
     uint32_t size() const {return size_;}
     
     operator vk::Buffer() const {return buffer_;}
@@ -31,7 +32,7 @@ private:
     vk::DeviceSize size_;
     
     vk::Buffer buffer_;
-    vk::DeviceMemory memory_;
+    // vk::DeviceMemory memory_;
     
     void *data_ = nullptr;
 };

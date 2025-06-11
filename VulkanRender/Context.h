@@ -5,7 +5,6 @@
 
 namespace vkRender
 {
-constexpr int MAX_FRAME_IN_FLIGHT = 3;
 static auto empty = std::vector<const char*>();
 
 using CreateSurfacerFunc = std::function<vk::SurfaceKHR(vk::Instance)>;
@@ -31,6 +30,8 @@ public:
     vk::SurfaceKHR &getSurface() {return surface;}
     
     bool init(const std::vector<const char*>& extensions, const CreateSurfacerFunc& func);
+
+    void release() const;
     
     void createVkInstance(const std::vector<const char*>& extensions);
     

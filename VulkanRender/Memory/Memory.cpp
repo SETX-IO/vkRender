@@ -7,22 +7,32 @@ namespace vkRender
 US_VKN;
 uint64_t Memory::memoryOffset = 0;
 uint16_t Memory::bufferCount = 0;
+std::vector<DeviceMemory> Memory::memories_ = std::vector<DeviceMemory>(10);
 std::map<MemoryPropertyFlags, DeviceMemory> Memory::memoryCache_ = {};
 
 void* Memory::BindBuffer(const Buffer& buffer, MemoryPropertyFlags property)
 {
     auto requirements = Device::getInstance()->getDevice().getBufferMemoryRequirements(buffer);
     auto memory = AllocateMemory(property, requirements);
-    auto offset = bufferCount * requirements.alignment;
+    // auto offset = bufferCount * requirements.alignment;
 
-    Device::getInstance()->getDevice().bindBufferMemory(buffer, memory, offset);
+    Device::getInstance()->getDevice().bindBufferMemory(buffer, memory, 0);
     
     if (property & MemoryPropertyFlagBits::eHostVisible)
     {
-        return Device::getInstance()->getDevice().mapMemory(memory, offset, requirements.size);
+        return Device::getInstance()->getDevice().mapMemory(memory, 0, requirements.size);
     }
 
     return nullptr;
+}
+
+void Memory::BindImage(const Image& image, MemoryPropertyFlags property)
+{
+    auto requirements = Device::getInstance()->getDevice().getImageMemoryRequirements(image);
+    auto memory = AllocateMemory(property, requirements);
+    auto offset = bufferCount * requirements.alignment;
+
+    Device::getInstance()->getDevice().bindImageMemory(image, memory, 0);
 }
 
 DeviceMemory Memory::AllocateMemory(MemoryPropertyFlags property, const MemoryRequirements& requirements)
@@ -31,9 +41,9 @@ DeviceMemory Memory::AllocateMemory(MemoryPropertyFlags property, const MemoryRe
     // {
     //     return memoryCache_.at(property);
     // }
-    PhysicalDeviceMemoryProperties physicalMemory = Device::getInstance()->getPDevice().getMemoryProperties();
-    uint32_t typeFilter = requirements.memoryTypeBits;
-    int typeIndex = 0;
+    PhysicalDeviceMemoryProperties physicalMemory = Device::getInstance()->getGPU().getMemoryProperties();
+    const uint32_t typeFilter = requirements.memoryTypeBits;
+    uint32_t typeIndex = 0;
 
     for (uint32_t i = 0; i < physicalMemory.memoryTypeCount; ++i)
     {
@@ -51,15 +61,23 @@ DeviceMemory Memory::AllocateMemory(MemoryPropertyFlags property, const MemoryRe
 
     auto result = Device::getInstance()->getDevice().allocateMemory(allocateInfo);
     // memoryCache_[property] = result;
+    memories_[bufferCount++] = result;
 
     return result;
 }
 
 void Memory::release()
 {
+    for (auto memory : memories_)
+    {
+        Device::getInstance()->getDevice().freeMemory(memory);
+    }
     for (auto memory : memoryCache_)
     {
-        Device::getInstance()->getDevice().unmapMemory(memory.second);
+        if (memory.first & MemoryPropertyFlagBits::eHostVisible)
+        {
+            Device::getInstance()->getDevice().unmapMemory(memory.second);
+        }
         Device::getInstance()->getDevice().freeMemory(memory.second);
     }
 }

@@ -31,9 +31,9 @@ bool Renderer::init()
         renderFinishedSemaphores[i] = device->newSemaphore();
         inFlightFences[i] = device->newFence();
     }
-    texture_ = Texture::createFormFile("E:/Documents/Project/vkRender/build/bin/Debug/Resouces/image.jpg");
     swapchain_ = Swapchain::create();
     cmdBuffers_ = CommandManager::Instance()->newCmdBuffers(MAX_FRAME_IN_FLIGHT);
+    texture_ = Texture::createFormFile("E:/Documents/Project/vkRender/build/bin/Debug/Resouces/image.jpg");
     
     createBuffer();
     createDescriptorSetLayout();
@@ -45,7 +45,21 @@ bool Renderer::init()
 
 void Renderer::release() const
 {
+    Device::getInstance()->presentQueue.waitIdle();
+    CommandManager::Instance()->release();
+    swapchain_->release();
     Device::getInstance()->getDevice().destroyPipeline(graphicsPipeline);
+    Device::getInstance()->getDevice().destroyPipelineLayout(pipelineLayout);
+    Device::getInstance()->getDevice().destroyDescriptorSetLayout(pipelineSetLayout);
+    Device::getInstance()->getDevice().destroyDescriptorPool(descriptorPool_);
+    texture_->release();
+    vertexBuffer_->release();
+    indexBuffer_->release();
+    for (int i = 0; i < MAX_FRAME_IN_FLIGHT; ++i)
+    {
+        uniformBuffer_[i]->release();
+    }
+    
 }
 
 void Renderer::draw()
@@ -91,18 +105,17 @@ void Renderer::draw()
     cmdBuffers_[currentFrame].beginRenderPass(&PassBeginInfo, {});
     cmdBuffers_[currentFrame].bindPipeline(PipelineBindPoint::eGraphics, graphicsPipeline);
 
-    Viewport viewport{0, 0, frameSize.x, frameSize.y, 0.f, 1.f};
-    Rect2D scissor{{0, 0}, {static_cast<uint32_t>(frameSize.x), static_cast<uint32_t>(frameSize.y)}};
+    const Viewport viewport{0, 0, frameSize.x, frameSize.y, 0.f, 1.f};
+    const Rect2D scissor{{0, 0}, {static_cast<uint32_t>(frameSize.x), static_cast<uint32_t>(frameSize.y)}};
     
     cmdBuffers_[currentFrame].setViewport(0, 1, &viewport);
     cmdBuffers_[currentFrame].setScissor(0, 1, &scissor);
 
-    DeviceSize offset = 0;
+    constexpr DeviceSize offset = 0;
 
     cmdBuffers_[currentFrame].bindVertexBuffers(0, vertexBuffer_->getBuffer(), offset);
     cmdBuffers_[currentFrame].bindIndexBuffer(indexBuffer_->getBuffer(), 0, IndexType::eUint16);
     cmdBuffers_[currentFrame].bindDescriptorSets(PipelineBindPoint::eGraphics, pipelineLayout, 0, 1, &descriptorSets_[currentFrame], 0 , nullptr);
-    
     cmdBuffers_[currentFrame].drawIndexed(12, 1, 0, 0, 0);
     
     cmdBuffers_[currentFrame].endRenderPass();
@@ -111,7 +124,7 @@ void Renderer::draw()
     updateUniform();
 
     SubmitInfo submitInfo;
-    std::array<PipelineStageFlags, 1> waitStages = {PipelineStageFlagBits::eColorAttachmentOutput};
+    constexpr std::array<PipelineStageFlags, 1> waitStages = {PipelineStageFlagBits::eColorAttachmentOutput};
     
     submitInfo
         .setWaitSemaphores(imageAvailableSemaphores[currentFrame])
@@ -142,14 +155,10 @@ void Renderer::draw()
 
 void Renderer::createDescriptorPool()
 {
-    std::array <DescriptorPoolSize, 2> poolSize;
-    poolSize[0]
-        .setType(DescriptorType::eUniformBuffer)
-        .setDescriptorCount(MAX_FRAME_IN_FLIGHT);
-
-    poolSize[1]
-        .setType(DescriptorType::eCombinedImageSampler)
-        .setDescriptorCount(MAX_FRAME_IN_FLIGHT);
+    std::array poolSize = {
+        DescriptorPoolSize{DescriptorType::eUniformBuffer, MAX_FRAME_IN_FLIGHT},
+        DescriptorPoolSize{DescriptorType::eCombinedImageSampler, MAX_FRAME_IN_FLIGHT},
+    };
 
     DescriptorPoolCreateInfo createInfo;
     createInfo
@@ -175,11 +184,7 @@ void Renderer::createDescriptorSets()
 
     for (int i = 0; i < MAX_FRAME_IN_FLIGHT; ++i)
     {
-        DescriptorBufferInfo bufferInfo;
-        bufferInfo
-            .setBuffer(uniformBuffer_[i]->getBuffer())
-            .setRange(sizeof(UniformObj));
-        
+        auto bufferInfo = uniformBuffer_[i]->newDescriptor();
         writes[0]
             .setDstSet(descriptorSets_[i])
             .setDescriptorType(DescriptorType::eUniformBuffer)
@@ -198,24 +203,15 @@ void Renderer::createDescriptorSets()
 
 void Renderer::createDescriptorSetLayout()
 {
-    DescriptorSetLayoutBinding uboBinding;
-    uboBinding
-        .setDescriptorCount(1)
-        .setDescriptorType(DescriptorType::eUniformBuffer)
-        .setStageFlags(ShaderStageFlagBits::eVertex);
-
-    DescriptorSetLayoutBinding samplerBinding;
-    samplerBinding
-        .setBinding(1)
-        .setDescriptorCount(1)
-        .setDescriptorType(DescriptorType::eCombinedImageSampler)
-        .setStageFlags(ShaderStageFlagBits::eFragment);
-
-    std::array bindings = {uboBinding, samplerBinding};
+    std::array binds = {
+        DescriptorSetLayoutBinding {0, DescriptorType::eUniformBuffer, 1, ShaderStageFlagBits::eVertex},            // Uniform Buffer Binding
+        DescriptorSetLayoutBinding {1, DescriptorType::eCombinedImageSampler, 1, ShaderStageFlagBits::eFragment}    // sampler Binding
+    };
+    
     DescriptorSetLayoutCreateInfo createInfo;
-    createInfo.setBindings(bindings);
+    createInfo.setBindings(binds);
 
-     pipelineSetLayout = Device::getInstance()->getDevice().createDescriptorSetLayout(createInfo);
+    pipelineSetLayout = Device::getInstance()->getDevice().createDescriptorSetLayout(createInfo);
 }
 
 void Renderer::createPipeline()

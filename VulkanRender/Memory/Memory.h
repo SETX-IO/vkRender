@@ -8,13 +8,15 @@ class Memory
 {
 public:
     static void* BindBuffer(const vk::Buffer &buffer, vk::MemoryPropertyFlags property);
+    static void BindImage(const vk::Image &image, vk::MemoryPropertyFlags property);
     
     static vk::DeviceMemory AllocateMemory(vk::MemoryPropertyFlags property, const vk::MemoryRequirements& requirements);\
 
     static void release();
 private:
     static std::map<vk::MemoryPropertyFlags, vk::DeviceMemory> memoryCache_;
-
+    static std::vector<vk::DeviceMemory> memories_;
+    
     static uint64_t memoryOffset;
     static uint16_t bufferCount;
 

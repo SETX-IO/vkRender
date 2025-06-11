@@ -19,3 +19,5 @@
 namespace vkRender {}
 
 typedef unsigned char uByte;
+
+constexpr int MAX_FRAME_IN_FLIGHT = 3;

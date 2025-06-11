@@ -52,11 +52,13 @@ public:
     
     bool init();
 
-    vk::PhysicalDevice &getPDevice() {return pDevice_;}
+    void release();
+
+    vk::PhysicalDevice &getGPU() {return GPU_;}
     vk::Device &getDevice() {return device_;}
 
-    vk::Semaphore newSemaphore() const;
-    vk::Fence newFence() const;
+    vk::Semaphore &newSemaphore();
+    vk::Fence &newFence();
 
     QueueFamilyIndices indices_;
     
@@ -68,8 +70,11 @@ private:
     bool pickPhysicalDevice();
     void createLogicalDevice();
     
-    vk::PhysicalDevice pDevice_;
+    vk::PhysicalDevice GPU_;
     vk::Device device_;
+
+    std::stack<vk::Semaphore> semaphoreStack_;
+    std::stack<vk::Fence> fenceStack_;
     
     static Device *s_instance;
 };
