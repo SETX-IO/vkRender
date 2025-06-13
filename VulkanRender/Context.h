@@ -9,13 +9,6 @@ static auto empty = std::vector<const char*>();
 
 using CreateSurfacerFunc = std::function<vk::SurfaceKHR(vk::Instance)>;
 
-struct UniformObj
-{
-    glm::mat4 module;
-    glm::mat4 view;
-    glm::mat4 proj;
-};
-
 class Context final
 {
 public:

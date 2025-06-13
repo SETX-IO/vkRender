@@ -21,15 +21,47 @@ Program* Program::create(const RenderPass &renderPass, float w, float h)
 bool Program::init(const RenderPass &renderPass, float w, float h)
 {
     createDescriptorSetLayout();
-    createDescriptorPool();
-    createDescriptorSets();
     createPipelineLayout();
     createPipeline(renderPass, w, h);
+
+    uniformBuffers_.resize(MAX_FRAME_IN_FLIGHT);
+    for (int i = 0; i < MAX_FRAME_IN_FLIGHT; ++i)
+    {
+        uniformBuffers_[i] = Buffer::create(BufferUsageFlagBits::eUniformBuffer, sizeof(UniformObj));
+    }
+    
     return true;
+}
+
+void Program::setDescriptorInfo(DescriptorImageInfo imageInfo)
+{
+    imageInfo_ = imageInfo;
+    createDescriptorPool();
+    createDescriptorSets();
+}
+
+void Program::setUniform(int currentFrame, const void* data)
+{
+    uniformBuffers_[currentFrame]->data(data);
+}
+
+void Program::use(const CommandBuffer& cmdBuf, int currentFrame)
+{
+    cmdBuf.bindPipeline(PipelineBindPoint::eGraphics, graphicsPipeline_);
+    cmdBuf.bindDescriptorSets(PipelineBindPoint::eGraphics, pipelineLayout_, 0, 1, &descriptorSets_[currentFrame], 0, nullptr);
 }
 
 void Program::release()
 {
+    Device::getInstance()->getDevice().destroyPipeline(graphicsPipeline_);
+    Device::getInstance()->getDevice().destroyPipelineLayout(pipelineLayout_);
+    Device::getInstance()->getDevice().destroyDescriptorSetLayout(pipelineSetLayout_);
+    Device::getInstance()->getDevice().destroyDescriptorPool(descriptorPool_);
+
+    for (auto uniform : uniformBuffers_)
+    {
+        uniform->release();
+    }
 }
 
 void Program::createDescriptorPool()
@@ -63,22 +95,17 @@ void Program::createDescriptorSets()
 
     for (int i = 0; i < MAX_FRAME_IN_FLIGHT; ++i)
     {
-        // DescriptorBufferInfo bufferInfo;
-        // bufferInfo
-        //     .setBuffer(uniformBuffer_[i]->getBuffer())
-        //     .setRange(sizeof(UniformObj));
-        //
-        // writes[0]
-        //     .setDstSet(descriptorSets_[i])
-        //     .setDescriptorType(DescriptorType::eUniformBuffer)
-        //     .setBufferInfo(bufferInfo);
-        //
-        // auto imageInfo = texture_->newDescriptor();
-        // writes[1]
-        //     .setDstBinding(1)
-        //     .setDstSet(descriptorSets_[i])
-        //     .setDescriptorType(DescriptorType::eCombinedImageSampler)
-        //     .setImageInfo(imageInfo);
+        auto bufferInfo = uniformBuffers_[i]->newDescriptor();
+        writes[0]
+            .setDstSet(descriptorSets_[i])
+            .setDescriptorType(DescriptorType::eUniformBuffer)
+            .setBufferInfo(bufferInfo);
+        
+        writes[1]
+            .setDstBinding(1)
+            .setDstSet(descriptorSets_[i])
+            .setDescriptorType(DescriptorType::eCombinedImageSampler)
+            .setImageInfo(imageInfo_);
 
         Device::getInstance()->getDevice().updateDescriptorSets(writes ,nullptr);
     }

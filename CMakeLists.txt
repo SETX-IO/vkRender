@@ -12,7 +12,7 @@ set(FMT_INSTALL OFF)
 
 find_package(Vulkan REQUIRED)
 
-list(APPEND RENDER_SRC ${RENDER_HEADER} ${EXTENSION})
+list(APPEND RENDER_SRC ${RENDER_HEADER} ${EXTENSION} ${RES_FOLDER}/DefultPipeLine.vert ${RES_FOLDER}/DefultPipeLine.frag)
 add_subdirectory(library)
 
 find_program(GLSLC_PROFRAM glslc REQUIRE)

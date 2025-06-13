@@ -19,5 +19,11 @@
 namespace vkRender {}
 
 typedef unsigned char uByte;
+struct UniformObj
+{
+    glm::mat4 module;
+    glm::mat4 view;
+    glm::mat4 proj;
+};
 
 constexpr int MAX_FRAME_IN_FLIGHT = 3;

@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "Context.h"
+#include "Program.h"
 #include "vkRender.h"
 #include "Texture.h"
 #include "Swapchain.h"
@@ -21,10 +22,9 @@ private:
     Texture *texture_ = nullptr;
     
     Swapchain *swapchain_ = nullptr;
+
+    Program *program_ = nullptr;
     
-    vk::Pipeline graphicsPipeline;
-    vk::PipelineLayout pipelineLayout;
-    vk::DescriptorSetLayout pipelineSetLayout;
     std::vector<vk::CommandBuffer> cmdBuffers_;
 
     std::vector<vk::Semaphore> imageAvailableSemaphores;
@@ -33,19 +33,11 @@ private:
 
     Buffer *vertexBuffer_ = nullptr;
     Buffer *indexBuffer_ = nullptr;
-    
-    std::vector<Buffer*> uniformBuffer_;
-    vk::DescriptorPool descriptorPool_;
-    std::vector<vk::DescriptorSet> descriptorSets_;
 
     int currentFrame = 0;
 
     glm::vec2 frameSize = glm::vec2(640, 480);
     
-    void createDescriptorPool();
-    void createDescriptorSets();
-    void createDescriptorSetLayout();
-    void createPipeline();
     void createBuffer();
 
     void updateUniform();

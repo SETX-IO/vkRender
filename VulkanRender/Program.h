@@ -5,12 +5,7 @@
 
 namespace vkRender
 {
-struct UniformObj
-{
-    glm::mat4 module;
-    glm::mat4 view;
-    glm::mat4 proj;
-};
+
 
 class Program
 {
@@ -18,9 +13,11 @@ public:
     static Program *create(const vk::RenderPass &renderPass, float w, float h);
 
     bool init(const vk::RenderPass &renderPass, float w, float h);
-
+    void setDescriptorInfo(vk::DescriptorImageInfo imageInfo);
+    
     // void getUniform();
-    // void setUnifotm();
+    void setUniform(int currentFrame, const void* data);
+    void use(const vk::CommandBuffer &cmdBuf, int currentFrame);
     
     void release();
 private:
@@ -33,6 +30,8 @@ private:
     std::vector<vk::DescriptorSet> descriptorSets_;
 
     std::vector<vk::WriteDescriptorSet> writes;
+
+    vk::DescriptorImageInfo imageInfo_;
 
     void createDescriptorPool();
     void createDescriptorSets();
