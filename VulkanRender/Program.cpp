@@ -35,9 +35,8 @@ bool Program::init(const RenderPass &renderPass, float w, float h)
 
 void Program::setDescriptorInfo(DescriptorImageInfo imageInfo)
 {
-    imageInfo_ = imageInfo;
     createDescriptorPool();
-    createDescriptorSets();
+    createDescriptorSets(imageInfo);
 }
 
 void Program::setUniform(int currentFrame, const void* data)
@@ -79,7 +78,7 @@ void Program::createDescriptorPool()
     descriptorPool_ = Device::getInstance()->getDevice().createDescriptorPool(createInfo);
 }
 
-void Program::createDescriptorSets()
+void Program::createDescriptorSets(DescriptorImageInfo imageInfo)
 {
     std::vector layouts(MAX_FRAME_IN_FLIGHT, pipelineSetLayout_);
     descriptorSets_.resize(MAX_FRAME_IN_FLIGHT);
@@ -105,7 +104,7 @@ void Program::createDescriptorSets()
             .setDstBinding(1)
             .setDstSet(descriptorSets_[i])
             .setDescriptorType(DescriptorType::eCombinedImageSampler)
-            .setImageInfo(imageInfo_);
+            .setImageInfo(imageInfo);
 
         Device::getInstance()->getDevice().updateDescriptorSets(writes ,nullptr);
     }
@@ -167,7 +166,6 @@ void Program::createPipeline(const RenderPass &renderPass, float w, float h)
 
     // 视口和剪裁矩形
     Viewport viewport {0, 0, w, h, 1.f};
-    
     Rect2D scissor {0, {static_cast<uint32_t>(w), static_cast<uint32_t>(h)}};
     
     PipelineViewportStateCreateInfo viewportState;

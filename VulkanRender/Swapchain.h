@@ -24,11 +24,13 @@ public:
     void reCreate();
 
     static vk::ImageView newImageView(const vk::Image &image, vk::Format format, vk::ImageAspectFlags aspect = vk::ImageAspectFlagBits::eColor);
+    vk::RenderPassBeginInfo newRenderPassBeginInfo(int currentFrame) const;
     std::vector<vk::Framebuffer> &getFrameBuffers() {return framebuffers_;}
     vk::RenderPass &getRenderPass() {return renderPass_;}
     vk::SwapchainKHR &get() {return swapchain_;}
 
     void release() const;
+    void releaseSwapchain() const;
 
 private:
     std::vector<vk::ImageView> imageViews;

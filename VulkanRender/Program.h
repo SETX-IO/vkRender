@@ -30,11 +30,9 @@ private:
     std::vector<vk::DescriptorSet> descriptorSets_;
 
     std::vector<vk::WriteDescriptorSet> writes;
-
-    vk::DescriptorImageInfo imageInfo_;
-
+    
     void createDescriptorPool();
-    void createDescriptorSets();
+    void createDescriptorSets(vk::DescriptorImageInfo imageInfo);
     void createDescriptorSetLayout();
     void createPipelineLayout();
     void createPipeline(const vk::RenderPass &renderPass, float w, float h);

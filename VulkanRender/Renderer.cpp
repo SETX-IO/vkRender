@@ -81,22 +81,20 @@ void Renderer::draw()
     uint32_t imageIndex = res.value;
     cmdBuffers_[currentFrame].reset();
     
-    CommandBufferBeginInfo beginInfo;
+    constexpr CommandBufferBeginInfo beginInfo;
 
-    cmdBuffers_[currentFrame].begin(beginInfo);
     std::array<ClearValue, 2> clearValues;
     clearValues[0].setColor({0.1f, 0.1f, 0.1f, 1.0f});
     clearValues[1].setDepthStencil({1.f, 0});
-    
-    RenderPassBeginInfo PassBeginInfo;
-    PassBeginInfo.setRenderPass(swapchain_->getRenderPass());
-    PassBeginInfo.setFramebuffer(swapchain_->getFrameBuffers()[currentFrame]);
+
+    RenderPassBeginInfo PassBeginInfo = swapchain_->newRenderPassBeginInfo(currentFrame);
     PassBeginInfo.setRenderArea({{0, 0}, {static_cast<uint32_t>(frameSize.x),static_cast<uint32_t>(frameSize.y)}});
     PassBeginInfo.setClearValues(clearValues);
 
     const Viewport viewport{0, 0, frameSize.x, frameSize.y, 0.f, 1.f};
     const Rect2D scissor{{0, 0}, {static_cast<uint32_t>(frameSize.x), static_cast<uint32_t>(frameSize.y)}};
-    
+
+    cmdBuffers_[currentFrame].begin(beginInfo);
     cmdBuffers_[currentFrame].beginRenderPass(&PassBeginInfo, {});
     
     cmdBuffers_[currentFrame].setViewport(0, 1, &viewport);

@@ -33,9 +33,12 @@ bool Swapchain::init()
 
 void Swapchain::reCreate()
 {
-    release();
+    Device::getInstance()->getDevice().waitIdle();
     
-    init();
+    releaseSwapchain();
+    
+    createSwapChain();
+    createFramebuffer();
 }
 
 ImageView Swapchain::newImageView(const Image& image, Format format, ImageAspectFlags aspect)
@@ -52,7 +55,27 @@ ImageView Swapchain::newImageView(const Image& image, Format format, ImageAspect
     return Device::getInstance()->getDevice().createImageView(createInfo);
 }
 
+RenderPassBeginInfo Swapchain::newRenderPassBeginInfo(int currentFrame) const
+{
+    RenderPassBeginInfo beginInfo;
+    beginInfo
+        .setRenderPass(renderPass_)
+        .setFramebuffer(framebuffers_[currentFrame]);
+    
+    return beginInfo;
+}
+
 void Swapchain::release() const
+{
+    auto device = Device::getInstance()->getDevice();
+    
+    releaseSwapchain();
+    
+    device.destroyRenderPass(renderPass_);
+    depthTexture->release();
+}
+
+void Swapchain::releaseSwapchain() const
 {
     auto device = Device::getInstance()->getDevice();
     
@@ -65,8 +88,6 @@ void Swapchain::release() const
         device.destroyImageView(imageView);
     }
     device.destroySwapchainKHR(swapchain_);
-    device.destroyRenderPass(renderPass_);
-    depthTexture->release();
 }
 
 void Swapchain::queryInfo()

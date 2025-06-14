@@ -14,7 +14,7 @@ void* Memory::BindBuffer(const Buffer& buffer, MemoryPropertyFlags property)
 {
     auto requirements = Device::getInstance()->getDevice().getBufferMemoryRequirements(buffer);
     auto memory = AllocateMemory(property, requirements);
-    // auto offset = bufferCount * requirements.alignment;
+    auto offset = bufferCount * requirements.alignment;
 
     Device::getInstance()->getDevice().bindBufferMemory(buffer, memory, 0);
     
