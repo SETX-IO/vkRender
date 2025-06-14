@@ -29,8 +29,22 @@ static std::vector<char> readFile(const std::string& filename)
 class Shader
 {
 public:
-    static vk::PipelineShaderStageCreateInfo create(const std::string &fileName, vk::ShaderStageFlagBits shaderType);
+    static vk::PipelineShaderStageCreateInfo createShader(const std::string &fileName, vk::ShaderStageFlagBits shaderType);
+    static Shader *create(const std::string &vertFile, const std::string &fragFile);
+
+    bool init(const std::string& vertFile, const std::string& fragFile);
+
+    void release() const;
+
+    const vk::DescriptorSetLayout& getSetLayout() const {return setLayout_;}
+    
+    vk::PipelineShaderStageCreateInfo vert;
+    vk::PipelineShaderStageCreateInfo frag;
 private:
+    vk::DescriptorSetLayout setLayout_;
+
+    void createSetLayout();
+    
     // static std::vector<uByte> compileShader(const std::string &code, shaderc_shader_kind shaderKind);
 };
 }

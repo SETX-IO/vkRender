@@ -46,7 +46,7 @@ bool Buffer::init(BufferUsageFlags bufferType, MemoryPropertyFlags property)
     //     data_ = Device::getInstance()->getDevice().mapMemory(memory_, 0, size_);
     // }
 
-    data_ = Memory::BindBuffer(buffer_, property);
+    data_ = Memory::Binding(buffer_, property);
     
     return true;
 }

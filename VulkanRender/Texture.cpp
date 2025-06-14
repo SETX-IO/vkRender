@@ -212,7 +212,7 @@ void Texture::createImage(ImageUsageFlags usage)
 
     texture_ = Device::getInstance()->getDevice().createImage(createInfo);
     
-    Memory::BindImage(texture_, MemoryPropertyFlagBits::eDeviceLocal);
+    Memory::Binding(texture_, MemoryPropertyFlagBits::eDeviceLocal);
 }
 
 }

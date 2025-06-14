@@ -33,6 +33,7 @@ int main(int argc, char* argv[])
 
     glfwDestroyWindow(window);
     glfwTerminate();
+    
     renderer->release();
     context->release();
     return 0;
@@ -46,7 +47,6 @@ void init()
     for (int i = 0; i < count; ++i)
     {
         const char *extension = extensionArray[i];
-        // std::cout << extension << "\n";
         
         extensions[i] = extension;
     }

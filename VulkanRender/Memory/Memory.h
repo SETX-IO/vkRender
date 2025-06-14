@@ -7,8 +7,8 @@ namespace vkRender
 class Memory
 {
 public:
-    static void* BindBuffer(const vk::Buffer &buffer, vk::MemoryPropertyFlags property);
-    static void BindImage(const vk::Image &image, vk::MemoryPropertyFlags property);
+    static void* Binding(const vk::Buffer &buffer, vk::MemoryPropertyFlags property);
+    static void Binding(const vk::Image &image, vk::MemoryPropertyFlags property);
     
     static vk::DeviceMemory AllocateMemory(vk::MemoryPropertyFlags property, const vk::MemoryRequirements& requirements);\
 
@@ -20,6 +20,6 @@ private:
     static uint64_t memoryOffset;
     static uint16_t bufferCount;
 
-    static constexpr uint32_t MAX_SIZE = 1024 * 1024;
+    static constexpr uint32_t MAX_SIZE = 1024 * 2024;
 };
 }

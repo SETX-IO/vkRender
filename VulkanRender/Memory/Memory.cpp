@@ -10,7 +10,7 @@ uint16_t Memory::bufferCount = 0;
 std::vector<DeviceMemory> Memory::memories_ = std::vector<DeviceMemory>(10);
 std::map<MemoryPropertyFlags, DeviceMemory> Memory::memoryCache_ = {};
 
-void* Memory::BindBuffer(const Buffer& buffer, MemoryPropertyFlags property)
+void* Memory::Binding(const Buffer& buffer, MemoryPropertyFlags property)
 {
     auto requirements = Device::getInstance()->getDevice().getBufferMemoryRequirements(buffer);
     auto memory = AllocateMemory(property, requirements);
@@ -26,7 +26,7 @@ void* Memory::BindBuffer(const Buffer& buffer, MemoryPropertyFlags property)
     return nullptr;
 }
 
-void Memory::BindImage(const Image& image, MemoryPropertyFlags property)
+void Memory::Binding(const Image& image, MemoryPropertyFlags property)
 {
     auto requirements = Device::getInstance()->getDevice().getImageMemoryRequirements(image);
     auto memory = AllocateMemory(property, requirements);

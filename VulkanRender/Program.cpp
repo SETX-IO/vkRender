@@ -20,7 +20,9 @@ Program* Program::create(const RenderPass &renderPass, float w, float h)
 
 bool Program::init(const RenderPass &renderPass, float w, float h)
 {
-    createDescriptorSetLayout();
+    shader_ = Shader::create("E:/Documents/Project/vkRender/build/bin/Debug/Resouces/vert.spv",
+        "E:/Documents/Project/vkRender/build/bin/Debug/Resouces/frag.spv");
+    
     createPipelineLayout();
     createPipeline(renderPass, w, h);
 
@@ -33,7 +35,7 @@ bool Program::init(const RenderPass &renderPass, float w, float h)
     return true;
 }
 
-void Program::setDescriptorInfo(DescriptorImageInfo imageInfo)
+void Program::addImageInfo(DescriptorImageInfo imageInfo)
 {
     createDescriptorPool();
     createDescriptorSets(imageInfo);
@@ -54,6 +56,7 @@ void Program::release()
 {
     Device::getInstance()->getDevice().destroyPipeline(graphicsPipeline_);
     Device::getInstance()->getDevice().destroyPipelineLayout(pipelineLayout_);
+    shader_->release();
     Device::getInstance()->getDevice().destroyDescriptorSetLayout(pipelineSetLayout_);
     Device::getInstance()->getDevice().destroyDescriptorPool(descriptorPool_);
 
@@ -80,7 +83,7 @@ void Program::createDescriptorPool()
 
 void Program::createDescriptorSets(DescriptorImageInfo imageInfo)
 {
-    std::vector layouts(MAX_FRAME_IN_FLIGHT, pipelineSetLayout_);
+    std::vector layouts(MAX_FRAME_IN_FLIGHT, shader_->getSetLayout());
     descriptorSets_.resize(MAX_FRAME_IN_FLIGHT);
     
     DescriptorSetAllocateInfo allocateInfo;
@@ -110,23 +113,10 @@ void Program::createDescriptorSets(DescriptorImageInfo imageInfo)
     }
 }
 
-void Program::createDescriptorSetLayout()
-{
-    std::array binds = {
-        DescriptorSetLayoutBinding {0, DescriptorType::eUniformBuffer, 1, ShaderStageFlagBits::eVertex},            // Uniform Buffer Binding
-        DescriptorSetLayoutBinding {1, DescriptorType::eCombinedImageSampler, 1, ShaderStageFlagBits::eFragment}    // sampler Binding
-    };
-    
-    DescriptorSetLayoutCreateInfo createInfo;
-    createInfo.setBindings(binds);
-
-    pipelineSetLayout_ = Device::getInstance()->getDevice().createDescriptorSetLayout(createInfo);
-}
-
 void Program::createPipelineLayout()
 {
     PipelineLayoutCreateInfo createInfo;
-    createInfo.setSetLayouts(pipelineSetLayout_);
+    createInfo.setSetLayouts(shader_->getSetLayout());
     
     pipelineLayout_ = Device::getInstance()->getDevice().createPipelineLayout(createInfo);
 }
@@ -135,13 +125,8 @@ void Program::createPipeline(const RenderPass &renderPass, float w, float h)
 {
     GraphicsPipelineCreateInfo createInfo;
     
-    PipelineShaderStageCreateInfo vertCreateInfo =
-        Shader::create("E:/Documents/Project/vkRender/build/bin/Debug/Resouces/vert.spv", ShaderStageFlagBits::eVertex);
+    std::array shaderStages = {shader_->vert, shader_->frag};
     
-    PipelineShaderStageCreateInfo fragCreateInfo
-    = Shader::create("E:/Documents/Project/vkRender/build/bin/Debug/Resouces/frag.spv", ShaderStageFlagBits::eFragment);
-    
-    std::array shaderStages = {vertCreateInfo, fragCreateInfo};
     createInfo.setStages(shaderStages);
     
     constexpr std::array dynamicStates = {DynamicState::eViewport, DynamicState::eScissor};
@@ -225,8 +210,5 @@ void Program::createPipeline(const RenderPass &renderPass, float w, float h)
         std::cout << "Pipeline create failed!";
     }
     graphicsPipeline_ = result.value;
-    
-    Device::getInstance()->getDevice().destroyShaderModule(vertCreateInfo.module);
-    Device::getInstance()->getDevice().destroyShaderModule(fragCreateInfo.module);
 }
 }

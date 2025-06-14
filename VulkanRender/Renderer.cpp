@@ -38,7 +38,7 @@ bool Renderer::init()
     createBuffer();
 
     program_ = Program::create(swapchain_->getRenderPass(), frameSize.x, frameSize.y);
-    program_->setDescriptorInfo(texture_->newDescriptor());
+    program_->addImageInfo(texture_->newDescriptor());
     
     return true;
 }
