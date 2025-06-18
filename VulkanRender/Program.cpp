@@ -25,20 +25,43 @@ bool Program::init(const RenderPass &renderPass, float w, float h)
     
     createPipelineLayout();
     createPipeline(renderPass, w, h);
-
-    uniformBuffers_.resize(MAX_FRAME_IN_FLIGHT);
-    for (int i = 0; i < MAX_FRAME_IN_FLIGHT; ++i)
-    {
-        uniformBuffers_[i] = Buffer::create(BufferUsageFlagBits::eUniformBuffer, sizeof(UniformObj));
-    }
     
     return true;
 }
 
 void Program::addImageInfo(DescriptorImageInfo imageInfo)
 {
+    DescriptorType type = DescriptorType::eCombinedImageSampler;
+    
+    WriteDescriptorSet set;
+    set.setDstBinding(bindingCount++)
+        .setDescriptorType(type)
+        .setImageInfo(imageInfo);
+
+    poolSizes_.emplace_back(type, MAX_FRAME_IN_FLIGHT);
+    writes_.push_back(set);
+}
+
+void Program::addBufferInfo(bool isDynamic)
+{
+    DescriptorType type = isDynamic ? DescriptorType::eUniformBufferDynamic : DescriptorType::eUniformBuffer;
+    WriteDescriptorSet set;
+    set.setDstBinding(bindingCount++)
+        .setDescriptorType(type);
+
+    poolSizes_.emplace_back(type, MAX_FRAME_IN_FLIGHT);
+    writes_.push_back(set);
+}
+
+void Program::buildDescriptorSet()
+{
+    uniformBuffers_.resize(MAX_FRAME_IN_FLIGHT);
+    for (int i = 0; i < MAX_FRAME_IN_FLIGHT; ++i)
+    {
+        uniformBuffers_[i] = Buffer::create(BufferUsageFlagBits::eUniformBuffer, sizeof(UniformObj));
+    }
     createDescriptorPool();
-    createDescriptorSets(imageInfo);
+    createDescriptorSets();
 }
 
 void Program::setUniform(int currentFrame, const void* data)
@@ -54,11 +77,11 @@ void Program::use(const CommandBuffer& cmdBuf, int currentFrame)
 
 void Program::release()
 {
-    Device::getInstance()->getDevice().destroyPipeline(graphicsPipeline_);
-    Device::getInstance()->getDevice().destroyPipelineLayout(pipelineLayout_);
+    Device::Instance()->getDevice().destroyPipeline(graphicsPipeline_);
+    Device::Instance()->getDevice().destroyPipelineLayout(pipelineLayout_);
     shader_->release();
-    Device::getInstance()->getDevice().destroyDescriptorSetLayout(pipelineSetLayout_);
-    Device::getInstance()->getDevice().destroyDescriptorPool(descriptorPool_);
+    // Device::getInstance()->getDevice().destroyDescriptorSetLayout(pipelineSetLayout_);
+    Device::Instance()->getDevice().destroyDescriptorPool(descriptorPool_);
 
     for (auto uniform : uniformBuffers_)
     {
@@ -68,20 +91,15 @@ void Program::release()
 
 void Program::createDescriptorPool()
 {
-    std::array poolSize = {
-        DescriptorPoolSize{DescriptorType::eUniformBuffer, MAX_FRAME_IN_FLIGHT},
-        DescriptorPoolSize{DescriptorType::eCombinedImageSampler, MAX_FRAME_IN_FLIGHT},
-    };
-
     DescriptorPoolCreateInfo createInfo;
     createInfo
-        .setPoolSizes(poolSize)
+        .setPoolSizes(poolSizes_)
         .setMaxSets(MAX_FRAME_IN_FLIGHT);
 
-    descriptorPool_ = Device::getInstance()->getDevice().createDescriptorPool(createInfo);
+    descriptorPool_ = Device::Instance()->getDevice().createDescriptorPool(createInfo);
 }
 
-void Program::createDescriptorSets(DescriptorImageInfo imageInfo)
+void Program::createDescriptorSets()
 {
     std::vector layouts(MAX_FRAME_IN_FLIGHT, shader_->getSetLayout());
     descriptorSets_.resize(MAX_FRAME_IN_FLIGHT);
@@ -91,25 +109,22 @@ void Program::createDescriptorSets(DescriptorImageInfo imageInfo)
         .setDescriptorPool(descriptorPool_)
         .setSetLayouts(layouts);
 
-    descriptorSets_ = Device::getInstance()->getDevice().allocateDescriptorSets(allocateInfo);
-
-    std::array<WriteDescriptorSet, 2> writes;
+    descriptorSets_ = Device::Instance()->getDevice().allocateDescriptorSets(allocateInfo);
 
     for (int i = 0; i < MAX_FRAME_IN_FLIGHT; ++i)
     {
-        auto bufferInfo = uniformBuffers_[i]->newDescriptor();
-        writes[0]
-            .setDstSet(descriptorSets_[i])
-            .setDescriptorType(DescriptorType::eUniformBuffer)
-            .setBufferInfo(bufferInfo);
-        
-        writes[1]
-            .setDstBinding(1)
-            .setDstSet(descriptorSets_[i])
-            .setDescriptorType(DescriptorType::eCombinedImageSampler)
-            .setImageInfo(imageInfo);
+        for (auto &write : writes_)
+        {
+            if (write.descriptorType == DescriptorType::eUniformBuffer || write.descriptorType == DescriptorType::eUniformBufferDynamic)
+            {
+                auto bufferInfo = uniformBuffers_[i]->newDescriptor();
+                write.setBufferInfo(bufferInfo);
+            }
+            
+            write.setDstSet(descriptorSets_[i]);
+        }
 
-        Device::getInstance()->getDevice().updateDescriptorSets(writes ,nullptr);
+        Device::Instance()->getDevice().updateDescriptorSets(writes_ ,nullptr);
     }
 }
 
@@ -118,7 +133,7 @@ void Program::createPipelineLayout()
     PipelineLayoutCreateInfo createInfo;
     createInfo.setSetLayouts(shader_->getSetLayout());
     
-    pipelineLayout_ = Device::getInstance()->getDevice().createPipelineLayout(createInfo);
+    pipelineLayout_ = Device::Instance()->getDevice().createPipelineLayout(createInfo);
 }
 
 void Program::createPipeline(const RenderPass &renderPass, float w, float h)
@@ -126,7 +141,6 @@ void Program::createPipeline(const RenderPass &renderPass, float w, float h)
     GraphicsPipelineCreateInfo createInfo;
     
     std::array shaderStages = {shader_->vert, shader_->frag};
-    
     createInfo.setStages(shaderStages);
     
     constexpr std::array dynamicStates = {DynamicState::eViewport, DynamicState::eScissor};
@@ -134,11 +148,11 @@ void Program::createPipeline(const RenderPass &renderPass, float w, float h)
     dynamicStateCreateInfo.setDynamicStates(dynamicStates);
     createInfo.setPDynamicState(&dynamicStateCreateInfo);
 
-    // 顶点输入
-    PipelineVertexInputStateCreateInfo vertexInputInfo;
+    
     auto attribute = Vertex::getAttribute();
     auto bindings = Vertex::getBinding();
-    
+    // 顶点输入
+    PipelineVertexInputStateCreateInfo vertexInputInfo;
     vertexInputInfo
         .setVertexAttributeDescriptions(attribute)
         .setVertexBindingDescriptions(bindings);
@@ -188,7 +202,6 @@ void Program::createPipeline(const RenderPass &renderPass, float w, float h)
     colorBlending
         .setLogicOp(LogicOp::eCopy)
         .setAttachments(colorBlendAttachment);
-    
     createInfo.setPColorBlendState(&colorBlending);
 
     PipelineDepthStencilStateCreateInfo depthStencil;
@@ -204,7 +217,7 @@ void Program::createPipeline(const RenderPass &renderPass, float w, float h)
         .setRenderPass(renderPass)
         .setBasePipelineIndex(-1);
 
-    auto result = Device::getInstance()->getDevice().createGraphicsPipeline(nullptr, createInfo);
+    auto result = Device::Instance()->getDevice().createGraphicsPipeline(Device::Instance()->getPipelineCache(), createInfo);
     if (result.result != Result::eSuccess)
     {
         std::cout << "Pipeline create failed!";

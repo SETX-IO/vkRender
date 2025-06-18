@@ -42,7 +42,7 @@ bool Context::init(const std::vector<const char*>& extensions, const CreateSurfa
 void Context::release() const
 {
     Memory::release();
-    Device::getInstance()->release();
+    Device::Instance()->release();
     
     vkInstance.destroySurfaceKHR(surface);
     vkInstance.destroy();

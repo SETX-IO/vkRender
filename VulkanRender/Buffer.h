@@ -18,10 +18,10 @@ public:
     void release() const;
     
     vk::Buffer &getBuffer() {return buffer_;}
-    vk::DescriptorBufferInfo newDescriptor();
-    uint32_t size() const {return size_;}
+    vk::DescriptorBufferInfo newDescriptor() const;
+    vk::DeviceSize size() const {return size_;}
     
-    operator vk::Buffer() const {return buffer_;}
+    // operator vk::Buffer() const {return buffer_;}
 
 private:
     Buffer(vk::DeviceSize size);

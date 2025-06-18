@@ -33,7 +33,7 @@ bool Swapchain::init()
 
 void Swapchain::reCreate()
 {
-    Device::getInstance()->getDevice().waitIdle();
+    Device::Instance()->getDevice().waitIdle();
     
     releaseSwapchain();
     
@@ -41,9 +41,9 @@ void Swapchain::reCreate()
     createFramebuffer();
 }
 
-ImageView Swapchain::newImageView(const Image& image, Format format, ImageAspectFlags aspect)
+ImageView Swapchain::newImageView(const Image& image, Format format, ImageAspectFlags aspect, uint32_t mipLevels)
 {
-    ImageSubresourceRange subresourceRange(aspect, 0, 1, 0, 1);
+    ImageSubresourceRange subresourceRange(aspect, 0, mipLevels, 0, 1);
     
     ImageViewCreateInfo createInfo;
     createInfo
@@ -52,7 +52,7 @@ ImageView Swapchain::newImageView(const Image& image, Format format, ImageAspect
         .setFormat(format)
         .setSubresourceRange(subresourceRange);
     
-    return Device::getInstance()->getDevice().createImageView(createInfo);
+    return Device::Instance()->getDevice().createImageView(createInfo);
 }
 
 RenderPassBeginInfo Swapchain::newRenderPassBeginInfo(int currentFrame) const
@@ -67,7 +67,7 @@ RenderPassBeginInfo Swapchain::newRenderPassBeginInfo(int currentFrame) const
 
 void Swapchain::release() const
 {
-    auto device = Device::getInstance()->getDevice();
+    auto device = Device::Instance()->getDevice();
     
     releaseSwapchain();
     
@@ -77,7 +77,7 @@ void Swapchain::release() const
 
 void Swapchain::releaseSwapchain() const
 {
-    auto device = Device::getInstance()->getDevice();
+    auto device = Device::Instance()->getDevice();
     
     for (int i = 0; i < imageViews.size(); ++i)
     {
@@ -92,7 +92,7 @@ void Swapchain::releaseSwapchain() const
 
 void Swapchain::queryInfo()
 {
-    const auto& pDevice = Device::getInstance()->getGPU();
+    const auto& pDevice = Device::Instance()->getGPU();
     const auto& surface = Context::getInstance()->getSurface();
     auto swapChainSupport = pDevice.getSurfaceCapabilitiesKHR(surface);
     auto capabilities = pDevice.getSurfaceCapabilitiesKHR(surface);
@@ -133,7 +133,7 @@ void Swapchain::queryInfo()
 
 void Swapchain::createSwapChain()
 {
-    const auto device = Device::getInstance();
+    const auto device = Device::Instance();
     
     SwapchainCreateInfoKHR createInfo;
     std::array indices = {device->indices_.graphicsFamily.value(), device->indices_.presentFamily.value()};
@@ -166,7 +166,7 @@ void Swapchain::createSwapChain()
 
 void Swapchain::createFramebuffer()
 {
-    auto device = Device::getInstance();
+    auto device = Device::Instance();
 
     std::vector images = device->getDevice().getSwapchainImagesKHR(swapchain_);
 
@@ -244,7 +244,7 @@ void Swapchain::createRenderPass()
         .setDstAccessMask(AccessFlagBits::eColorAttachmentWrite | AccessFlagBits::eDepthStencilAttachmentWrite);
     createInfo.setDependencies(dependency);
 
-    renderPass_ = Device::getInstance()->getDevice().createRenderPass(createInfo);
+    renderPass_ = Device::Instance()->getDevice().createRenderPass(createInfo);
 }
 }
 

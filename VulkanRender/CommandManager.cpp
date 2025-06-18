@@ -20,16 +20,16 @@ bool CommandManager::init()
     CommandPoolCreateInfo createInfo;
     createInfo
         .setFlags(CommandPoolCreateFlagBits::eResetCommandBuffer)
-        .setQueueFamilyIndex(Device::getInstance()->indices_.graphicsFamily.value());
+        .setQueueFamilyIndex(Device::Instance()->indices_.graphicsFamily.value());
 
-    pool_ = Device::getInstance()->getDevice().createCommandPool(createInfo);
+    pool_ = Device::Instance()->getDevice().createCommandPool(createInfo);
     
     return true;
 }
 
 void CommandManager::release() const
 {
-    Device::getInstance()->getDevice().destroyCommandPool(pool_);
+    Device::Instance()->getDevice().destroyCommandPool(pool_);
     
     s_instance = nullptr;
 }
@@ -43,17 +43,17 @@ std::vector<CommandBuffer> CommandManager::newCmdBuffers(uint32_t count)
         .setCommandPool(pool_)
         .setLevel(CommandBufferLevel::ePrimary)
         .setCommandBufferCount(count);
-    cmdBuffers = Device::getInstance()->getDevice().allocateCommandBuffers(allocateInfo);
+    cmdBuffers = Device::Instance()->getDevice().allocateCommandBuffers(allocateInfo);
 
     for (auto cmdBuf : cmdBuffers)
     {
         cmdBufferStack.push(cmdBuf);
     }
-
+    
     return cmdBuffers;
 }
 
-void CommandManager::record(std::function<void(const CommandBuffer &)> callback)
+void CommandManager::record(const std::function<void(const CommandBuffer &)>& callback)
 {
     auto cmdBuf = newCmdBuffers(1)[0];
 
@@ -68,8 +68,8 @@ void CommandManager::record(std::function<void(const CommandBuffer &)> callback)
     SubmitInfo submit;
     submit.setCommandBuffers(cmdBuf);
 
-    Device::getInstance()->graphicsQueue.submit(submit);
-    Device::getInstance()->graphicsQueue.waitIdle();
+    Device::Instance()->graphicsQueue.submit(submit);
+    Device::Instance()->graphicsQueue.waitIdle();
 
     freeCmdBuffer();
 }
@@ -77,7 +77,7 @@ void CommandManager::record(std::function<void(const CommandBuffer &)> callback)
 void CommandManager::freeCmdBuffer()
 {
     auto freeBuffer = cmdBufferStack.top();
-    Device::getInstance()->getDevice().freeCommandBuffers(pool_, freeBuffer);
+    Device::Instance()->getDevice().freeCommandBuffers(pool_, freeBuffer);
     cmdBufferStack.pop();
 }
 }

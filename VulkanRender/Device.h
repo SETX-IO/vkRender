@@ -16,10 +16,10 @@ struct QueueFamilyIndices
 
     bool equal() const {return graphicsFamily.value() == presentFamily.value();}
 
-    static QueueFamilyIndices find(const vk::PhysicalDevice &pDevice, const vk::SurfaceKHR &surface)
+    static QueueFamilyIndices find(const vk::PhysicalDevice &gpu, const vk::SurfaceKHR &surface)
     {
         QueueFamilyIndices familyIndices;
-        std::vector familyProperties = pDevice.getQueueFamilyProperties();
+        std::vector familyProperties = gpu.getQueueFamilyProperties();
 
         for (int i = 0; i < familyProperties.size(); ++i)
         {
@@ -29,7 +29,7 @@ struct QueueFamilyIndices
                 familyIndices.graphicsFamily = i;
             }
 
-            if (pDevice.getSurfaceSupportKHR(i, surface))
+            if (gpu.getSurfaceSupportKHR(i, surface))
             {
                 familyIndices.presentFamily = i;
             }
@@ -48,20 +48,22 @@ class Device
 {
 public:
     ~Device();
-    static Device *getInstance();
+    static Device *Instance();
     
     bool init();
 
     void release();
 
-    vk::PhysicalDevice &getGPU() {return GPU_;}
-    vk::Device &getDevice() {return device_;}
+    const vk::PhysicalDevice &getGPU() const {return GPU_;}
+    const vk::Device &getDevice() const {return device_;}
+    vk::PipelineCache &getPipelineCache() {return pipelineCache_;}
 
     vk::Semaphore &newSemaphore();
     vk::Fence &newFence();
+    vk::Queue &getQueue(uint32_t family);
 
     QueueFamilyIndices indices_;
-    
+
     vk::Queue graphicsQueue;
     vk::Queue presentQueue;
 
@@ -69,12 +71,17 @@ public:
 private:
     bool pickPhysicalDevice();
     void createLogicalDevice();
+    void createPipelineCache();
     
     vk::PhysicalDevice GPU_;
     vk::Device device_;
 
+    vk::PipelineCache pipelineCache_;
+
     std::stack<vk::Semaphore> semaphoreStack_;
     std::stack<vk::Fence> fenceStack_;
+
+    std::map<uint32_t, vk::Queue> queueCache_;
     
     static Device *s_instance;
 };

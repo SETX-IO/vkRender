@@ -35,16 +35,6 @@ Buffer* Buffer::create(BufferUsageFlags bufferType, DeviceSize size)
 bool Buffer::init(BufferUsageFlags bufferType, MemoryPropertyFlags property)
 {
     createBuffer(bufferType);
-    
-    // MemoryRequirements memory = Device::getInstance()->getDevice().getBufferMemoryRequirements(buffer_);
-    // memory_ = Memory::AllocateMemory(property, memory);
-    //
-    // Device::getInstance()->getDevice().bindBufferMemory(buffer_, memory_, 0);
-    //
-    // if (property & MemoryPropertyFlagBits::eHostVisible)
-    // {
-    //     data_ = Device::getInstance()->getDevice().mapMemory(memory_, 0, size_);
-    // }
 
     data_ = Memory::Binding(buffer_, property);
     
@@ -53,13 +43,10 @@ bool Buffer::init(BufferUsageFlags bufferType, MemoryPropertyFlags property)
 
 void Buffer::release() const
 {
-    // Device::getInstance()->getDevice().unmapMemory(memory_);
-    
-    Device::getInstance()->getDevice().destroyBuffer(buffer_);
-    // Device::getInstance()->getDevice().freeMemory(memory_);
+    Device::Instance()->getDevice().destroyBuffer(buffer_);
 }
 
-DescriptorBufferInfo Buffer::newDescriptor()
+DescriptorBufferInfo Buffer::newDescriptor() const
 {
     DescriptorBufferInfo info;
     info
@@ -79,7 +66,7 @@ void Buffer::copy(const Buffer& dstBuffer) const
     
     CommandManager::Instance()->record([&](const CommandBuffer &cmd)
     {
-        cmd.copyBuffer(buffer_, dstBuffer, 1, &bufferCopy);
+        cmd.copyBuffer(buffer_, dstBuffer.buffer_, 1, &bufferCopy);
     });
 
     release();
@@ -102,6 +89,6 @@ void Buffer::createBuffer(BufferUsageFlags bufferType)
         .setUsage(bufferType)
         .setSharingMode(SharingMode::eExclusive);
     
-    buffer_ = Device::getInstance()->getDevice().createBuffer(createInfo);
+    buffer_ = Device::Instance()->getDevice().createBuffer(createInfo);
 }
 }

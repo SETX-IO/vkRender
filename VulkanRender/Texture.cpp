@@ -37,19 +37,21 @@ bool Texture::init(const std::string& fileName)
        return false;
     }
 
+    mipLevels_ = static_cast<uint32_t> (std::floor(std::log2(std::max(width_, height_))));
     format_ = Format::eR8G8B8A8Srgb;
     createImage(ImageUsageFlagBits::eTransferDst | ImageUsageFlagBits::eSampled);
+    textureView_ = Swapchain::newImageView(texture_, format_, ImageAspectFlagBits::eColor, mipLevels_);
     
     auto staging = Buffer::create(BufferUsageFlagBits::eTransferSrc, width_ * height_ * 4);
     staging->data(data_);
-
-    transitionLayout(format_, ImageLayout::eUndefined, ImageLayout::eTransferDstOptimal);
-
+    
     BufferImageCopy region;
     region
-        .setImageOffset({0, 0, 0})
+        .setImageOffset(0)
         .setImageExtent({static_cast<uint32_t>(width_), static_cast<uint32_t>(height_), 1})
         .setImageSubresource({ImageAspectFlagBits::eColor, 0, 0, 1});
+
+    transitionLayout(format_, ImageLayout::eUndefined, ImageLayout::eTransferDstOptimal);
     
     CommandManager::Instance()->record([&](const CommandBuffer &cmd)
     {
@@ -57,10 +59,8 @@ bool Texture::init(const std::string& fileName)
     });
     
     transitionLayout(format_, ImageLayout::eTransferDstOptimal, ImageLayout::eShaderReadOnlyOptimal);
-    
+    // generateMipmaps();
     staging->release();
-
-    textureView_ = Swapchain::newImageView(texture_, format_);
 
     createSampler();
     
@@ -75,7 +75,7 @@ bool Texture::init()
     
     for (Format format : candidates)
     {
-        auto properties = Device::getInstance()->getGPU().getFormatProperties(format);
+        auto properties = Device::Instance()->getGPU().getFormatProperties(format);
 
         if (tiling == ImageTiling::eLinear && (properties.optimalTilingFeatures & feature) == feature)
         {
@@ -156,12 +156,74 @@ void Texture::transitionLayout(Format format, ImageLayout old, ImageLayout layou
         destinationStage = PipelineStageFlagBits::eEarlyFragmentTests;
     }
 
-    barrier.setSubresourceRange({aspect, 0, 1, 0, 1});
+    barrier.setSubresourceRange({aspect, 0, mipLevels_, 0, 1});
     
     CommandManager::Instance()->record([&](const CommandBuffer &cmd)
     {
         cmd.pipelineBarrier(sourceStage, destinationStage, {}, {}, {}, barrier);
     });
+}
+
+void Texture::generateMipmaps()
+{
+    ImageMemoryBarrier barrier;
+    constexpr ImageSubresourceRange Range {ImageAspectFlagBits::eColor, 0, 1, 0, 1};
+    ImageSubresourceLayers Layers = {ImageAspectFlagBits::eColor, 1, 0, 1};
+    int mipWidth = width_;
+    int mipHeight = height_;
+    
+    barrier
+        .setImage(texture_)
+        .setSrcQueueFamilyIndex(QueueFamilyIgnored)
+        .setDstQueueFamilyIndex(QueueFamilyIgnored)
+        .setSubresourceRange(Range)
+        .setOldLayout(ImageLayout::eTransferDstOptimal)
+        .setNewLayout(ImageLayout::eTransferSrcOptimal)
+        .setSrcAccessMask(AccessFlagBits::eTransferWrite)
+        .setDstAccessMask(AccessFlagBits::eTransferRead);
+
+    ImageBlit blit;
+    blit.setSrcOffsets({0, {mipWidth, mipHeight, 1}})
+        .setSrcSubresource(Layers)
+        .setDstSubresource(Layers);
+
+    CommandManager::Instance()->record([&](const CommandBuffer& cmd)
+    {
+        for (uint32_t i = 1; i < mipLevels_; ++i)
+        {
+            barrier.subresourceRange.setBaseMipLevel(i - 1);
+            blit.srcSubresource.setMipLevel(i - 1);
+            blit.setDstOffsets({0, {mipWidth > 1 ? mipWidth / 2 : 1, mipHeight > 1 ? mipHeight / 2 : 1, 1}})
+                .dstSubresource.setMipLevel(i);
+
+            cmd.pipelineBarrier(PipelineStageFlagBits::eTransfer, PipelineStageFlagBits::eTransfer,
+                {}, {}, {}, barrier);
+                
+            cmd.blitImage(texture_, ImageLayout::eTransferSrcOptimal,
+                texture_, ImageLayout::eTransferDstOptimal,
+                blit, Filter::eLinear);
+
+            barrier
+                .setOldLayout(ImageLayout::eTransferSrcOptimal)
+                .setNewLayout(ImageLayout::eShaderReadOnlyOptimal)
+                .setSrcAccessMask(AccessFlagBits::eTransferRead)
+                .setDstAccessMask(AccessFlagBits::eShaderRead);
+                    
+            cmd.pipelineBarrier(PipelineStageFlagBits::eTransfer, PipelineStageFlagBits::eFragmentShader,
+        {}, {}, {}, barrier);
+        }
+
+        barrier
+            .setOldLayout(ImageLayout::eTransferDstOptimal)
+            .setNewLayout(ImageLayout::eShaderReadOnlyOptimal)
+            .setSrcAccessMask(AccessFlagBits::eTransferRead)
+            .setDstAccessMask(AccessFlagBits::eShaderRead)
+            .subresourceRange.setBaseMipLevel(mipLevels_ - 1);
+                            
+        cmd.pipelineBarrier(PipelineStageFlagBits::eTransfer, PipelineStageFlagBits::eFragmentShader,
+        {}, {}, {}, barrier);
+    });
+
 }
 
 void Texture::createSampler()
@@ -174,24 +236,24 @@ void Texture::createSampler()
         .setAddressModeU(SamplerAddressMode::eRepeat)
         .setAddressModeV(SamplerAddressMode::eRepeat)
         .setAddressModeW(SamplerAddressMode::eRepeat)
-        .setMaxAnisotropy(Device::getInstance()->properties.limits.maxSamplerAnisotropy)
+        .setMaxAnisotropy(Device::Instance()->properties.limits.maxSamplerAnisotropy)
         .setBorderColor(BorderColor::eIntOpaqueBlack)
         .setCompareOp(CompareOp::eAlways)
         .setMipmapMode(SamplerMipmapMode::eLinear);
 
-    textureSampler_ = Device::getInstance()->getDevice().createSampler(createInfo);
+    textureSampler_ = Device::Instance()->getDevice().createSampler(createInfo);
 }
 
 void Texture::release() const
 {
     stbi_image_free(data_);
-    Device::getInstance()->getDevice().destroyImage(texture_);
-    Device::getInstance()->getDevice().destroySampler(textureSampler_);
-    Device::getInstance()->getDevice().destroyImageView(textureView_);
+    Device::Instance()->getDevice().destroyImage(texture_);
+    Device::Instance()->getDevice().destroySampler(textureSampler_);
+    Device::Instance()->getDevice().destroyImageView(textureView_);
 }
 
 Texture::Texture(uint32_t w, uint32_t h):
-width_(w), height_(h), format_(Format::eUndefined)
+width_(w), height_(h), format_(Format::eUndefined), mipLevels_(1)
 {
 }
 
@@ -201,7 +263,7 @@ void Texture::createImage(ImageUsageFlags usage)
     createInfo
         .setImageType(ImageType::e2D)
         .setExtent({static_cast<uint32_t>(width_), static_cast<uint32_t>(height_), 1})
-        .setMipLevels(1)
+        .setMipLevels(mipLevels_)
         .setArrayLayers(1)
         .setFormat(format_)
         .setTiling(ImageTiling::eOptimal)
@@ -210,7 +272,7 @@ void Texture::createImage(ImageUsageFlags usage)
         .setSharingMode(SharingMode::eExclusive)
         .setSamples(SampleCountFlagBits::e1);
 
-    texture_ = Device::getInstance()->getDevice().createImage(createInfo);
+    texture_ = Device::Instance()->getDevice().createImage(createInfo);
     
     Memory::Binding(texture_, MemoryPropertyFlagBits::eDeviceLocal);
 }

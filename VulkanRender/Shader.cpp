@@ -13,7 +13,7 @@ PipelineShaderStageCreateInfo Shader::createShader(const std::string &fileName, 
     createInfo.codeSize = code.size();
     createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
 
-    ShaderModule shaderModule = Device::getInstance()->getDevice().createShaderModule(createInfo);
+    ShaderModule shaderModule = Device::Instance()->getDevice().createShaderModule(createInfo);
 
     shaderCreateInfo
         .setModule(shaderModule)
@@ -40,15 +40,14 @@ bool Shader::init(const std::string& vertFile, const std::string& fragFile)
 
     createSetLayout();
     
-    
     return true;
 }
 
 void Shader::release() const
 {
-    Device::getInstance()->getDevice().destroyShaderModule(vert.module);
-    Device::getInstance()->getDevice().destroyShaderModule(frag.module);
-    Device::getInstance()->getDevice().destroyDescriptorSetLayout(setLayout_);
+    Device::Instance()->getDevice().destroyShaderModule(vert.module);
+    Device::Instance()->getDevice().destroyShaderModule(frag.module);
+    Device::Instance()->getDevice().destroyDescriptorSetLayout(setLayout_);
 }
 
 void Shader::createSetLayout()
@@ -61,7 +60,7 @@ void Shader::createSetLayout()
     DescriptorSetLayoutCreateInfo createInfo;
     createInfo.setBindings(binds);
 
-    setLayout_ = Device::getInstance()->getDevice().createDescriptorSetLayout(createInfo);
+    setLayout_ = Device::Instance()->getDevice().createDescriptorSetLayout(createInfo);
 }
 
 // std::vector<uByte> Shader::compileShader(const std::string &code, shaderc_shader_kind shaderKind)
@@ -74,7 +73,7 @@ void Shader::createSetLayout()
 //     {
 //         return {};
 //     }
-//
+//     
 //     return {result.cbegin(), result.cend()};
 // }
 }

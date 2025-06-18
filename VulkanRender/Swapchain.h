@@ -23,7 +23,7 @@ public:
     bool init();
     void reCreate();
 
-    static vk::ImageView newImageView(const vk::Image &image, vk::Format format, vk::ImageAspectFlags aspect = vk::ImageAspectFlagBits::eColor);
+    static vk::ImageView newImageView(const vk::Image &image, vk::Format format, vk::ImageAspectFlags aspect = vk::ImageAspectFlagBits::eColor, uint32_t mipLevels = 1);
     vk::RenderPassBeginInfo newRenderPassBeginInfo(int currentFrame) const;
     std::vector<vk::Framebuffer> &getFrameBuffers() {return framebuffers_;}
     vk::RenderPass &getRenderPass() {return renderPass_;}

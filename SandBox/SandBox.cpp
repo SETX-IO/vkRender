@@ -59,11 +59,49 @@ void init()
             return surface;
     });
 
-    renderer = vkRender::Renderer::create(context);
+    const std::vector<vkRender::Vertex> vertexes =
+{
+        {-0.8f, -0.8f, 0.f, 1.f, 0.f},
+        {0.8f, -0.8f, 0.f, 0.f, 0.f},
+        {0.8f, 0.8f, 0.f, 0.f, 1.f},
+        {-0.8f, 0.8f, 0.f, 1.f, 1.f},
+
+        {-0.8f, -0.8f, -0.8f, 1.f, 0.f},
+        {0.8f, -0.8f, -0.8f, 0.f, 0.f},
+        {0.8f, 0.8f, -0.8f, 0.f, 1.f},
+        {-0.8f, 0.8f, -0.8f, 1.f, 1.f},
+
+        {-0.8f, 0.8f, 0.f, 1.f, 0.f},
+        {0.8f, 0.8f, 0.f, 0.f, 0.f},
+        {0.8f, 0.8f, -0.8f, 0.f, 1.f},
+        {-0.8f, 0.8f, -0.8f, 1.f, 1.f},
+    };
+
+    const std::vector<uint16_t> indices = {
+        0, 1, 2, 2, 3, 0,
+        4, 5, 6, 6, 7, 4,
+        8, 9, 10, 10, 11, 8
+    };
     
-    // int width = 0;
-    // int height = 0;
-    // glfwGetWindowFrameSize(window, nullptr, nullptr, &width, &height);
+    renderer = vkRender::Renderer::create();
+    renderer->addVertexData(vertexes);
+    renderer->addIndexData(indices);
+
+    int width = 0;
+    int height = 0;
+    glfwGetWindowFrameSize(window, nullptr, nullptr, &width, &height);
+
+    auto texture_ = vkRender::Texture::createFormFile("E:/Documents/Project/vkRender/build/bin/Debug/Resouces/image.jpg");
+    auto program = vkRender::Program::create(renderer->getSwapchain()->getRenderPass(), width, width);
+    program->addBufferInfo();
+    program->addImageInfo(texture_->newDescriptor());
+    program->buildDescriptorSet();
+
+    renderer->setProgram(program);
+    
+    // texture_->release();
+    
+
     
     // context->setFrameSize(glm::vec2(width, height));
 

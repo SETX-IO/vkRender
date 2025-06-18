@@ -12,15 +12,15 @@ std::map<MemoryPropertyFlags, DeviceMemory> Memory::memoryCache_ = {};
 
 void* Memory::Binding(const Buffer& buffer, MemoryPropertyFlags property)
 {
-    auto requirements = Device::getInstance()->getDevice().getBufferMemoryRequirements(buffer);
+    auto requirements = Device::Instance()->getDevice().getBufferMemoryRequirements(buffer);
     auto memory = AllocateMemory(property, requirements);
     auto offset = bufferCount * requirements.alignment;
 
-    Device::getInstance()->getDevice().bindBufferMemory(buffer, memory, 0);
+    Device::Instance()->getDevice().bindBufferMemory(buffer, memory, 0);
     
     if (property & MemoryPropertyFlagBits::eHostVisible)
     {
-        return Device::getInstance()->getDevice().mapMemory(memory, 0, requirements.size);
+        return Device::Instance()->getDevice().mapMemory(memory, 0, requirements.size);
     }
 
     return nullptr;
@@ -28,11 +28,11 @@ void* Memory::Binding(const Buffer& buffer, MemoryPropertyFlags property)
 
 void Memory::Binding(const Image& image, MemoryPropertyFlags property)
 {
-    auto requirements = Device::getInstance()->getDevice().getImageMemoryRequirements(image);
+    auto requirements = Device::Instance()->getDevice().getImageMemoryRequirements(image);
     auto memory = AllocateMemory(property, requirements);
     auto offset = bufferCount * requirements.alignment;
 
-    Device::getInstance()->getDevice().bindImageMemory(image, memory, 0);
+    Device::Instance()->getDevice().bindImageMemory(image, memory, 0);
 }
 
 DeviceMemory Memory::AllocateMemory(MemoryPropertyFlags property, const MemoryRequirements& requirements)
@@ -41,7 +41,7 @@ DeviceMemory Memory::AllocateMemory(MemoryPropertyFlags property, const MemoryRe
     // {
     //     return memoryCache_.at(property);
     // }
-    PhysicalDeviceMemoryProperties physicalMemory = Device::getInstance()->getGPU().getMemoryProperties();
+    PhysicalDeviceMemoryProperties physicalMemory = Device::Instance()->getGPU().getMemoryProperties();
     const uint32_t typeFilter = requirements.memoryTypeBits;
     uint32_t typeIndex = 0;
 
@@ -59,7 +59,7 @@ DeviceMemory Memory::AllocateMemory(MemoryPropertyFlags property, const MemoryRe
         .setAllocationSize(requirements.size)
         .setMemoryTypeIndex(typeIndex);
 
-    auto result = Device::getInstance()->getDevice().allocateMemory(allocateInfo);
+    auto result = Device::Instance()->getDevice().allocateMemory(allocateInfo);
     // memoryCache_[property] = result;
     memories_[bufferCount++] = result;
 
@@ -70,15 +70,15 @@ void Memory::release()
 {
     for (auto memory : memories_)
     {
-        Device::getInstance()->getDevice().freeMemory(memory);
+        Device::Instance()->getDevice().freeMemory(memory);
     }
     for (auto memory : memoryCache_)
     {
         if (memory.first & MemoryPropertyFlagBits::eHostVisible)
         {
-            Device::getInstance()->getDevice().unmapMemory(memory.second);
+            Device::Instance()->getDevice().unmapMemory(memory.second);
         }
-        Device::getInstance()->getDevice().freeMemory(memory.second);
+        Device::Instance()->getDevice().freeMemory(memory.second);
     }
 }
 }

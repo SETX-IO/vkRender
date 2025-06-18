@@ -21,16 +21,10 @@ struct Vertex
 
     static std::array<vk::VertexInputAttributeDescription, 2> getAttribute()
     {
-        std::array<vk::VertexInputAttributeDescription, 2> attributes;
-        attributes[0]
-            .setFormat(vk::Format::eR32G32B32Sfloat)
-            .setLocation(0)
-            .setOffset(0);
-
-        attributes[1]
-            .setFormat(vk::Format::eR32G32Sfloat)
-            .setLocation(1)
-            .setOffset(sizeof(float) * 3);
+        constexpr std::array attributes = {
+            vk::VertexInputAttributeDescription{0, 0, vk::Format::eR32G32B32Sfloat, 0},
+            vk::VertexInputAttributeDescription{1, 0, vk::Format::eR32G32Sfloat, sizeof(float) * 3},
+        };
     
         return attributes;
     }

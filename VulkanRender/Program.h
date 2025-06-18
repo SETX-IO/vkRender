@@ -15,6 +15,8 @@ public:
 
     bool init(const vk::RenderPass &renderPass, float w, float h);
     void addImageInfo(vk::DescriptorImageInfo imageInfo);
+    void addBufferInfo(bool isDynamic = false);
+    void buildDescriptorSet();
     
     // void getUniform();
     void setUniform(int currentFrame, const void* data);
@@ -26,16 +28,17 @@ private:
     vk::Pipeline graphicsPipeline_;
     vk::PipelineLayout pipelineLayout_;
     
-    vk::DescriptorSetLayout pipelineSetLayout_;
+    // vk::DescriptorSetLayout pipelineSetLayout_;
     vk::DescriptorPool descriptorPool_;
     std::vector<Buffer*> uniformBuffers_;
     std::vector<vk::DescriptorSet> descriptorSets_;
 
-    std::vector<vk::WriteDescriptorSet> writes;
+    std::vector<vk::WriteDescriptorSet> writes_;
+    std::vector<vk::DescriptorPoolSize> poolSizes_;
+    uint32_t bindingCount = 0;
     
     void createDescriptorPool();
-    void createDescriptorSets(vk::DescriptorImageInfo imageInfo);
-    // void createDescriptorSetLayout();
+    void createDescriptorSets();
     void createPipelineLayout();
     void createPipeline(const vk::RenderPass &renderPass, float w, float h);
 };

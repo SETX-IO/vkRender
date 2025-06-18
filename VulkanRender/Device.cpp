@@ -13,7 +13,7 @@ Device::~Device()
     s_instance = nullptr;
 }
 
-Device* Device::getInstance()
+Device* Device::Instance()
 {
     if (!s_instance)
     {
@@ -30,6 +30,7 @@ bool Device::init()
     if (pickPhysicalDevice())
     {
         createLogicalDevice();
+        createPipelineCache();
         properties = GPU_.getProperties();
         result = true;
     }
@@ -54,6 +55,8 @@ void Device::release()
         device_.destroyFence(fence);
         fenceStack_.pop();
     }
+    
+    device_.destroyPipelineCache(pipelineCache_);
     device_.destroy();
 }
 
@@ -73,6 +76,17 @@ Fence &Device::newFence()
     fenceStack_.push(fence);
     
     return fenceStack_.top();
+}
+
+Queue &Device::getQueue(const uint32_t family)
+{
+    if (queueCache_.find(family) != queueCache_.end())
+    {
+        return queueCache_[family];
+    }
+    
+    queueCache_[family] = device_.getQueue(family, 0);
+    return queueCache_[family];
 }
 
 bool Device::pickPhysicalDevice()
@@ -112,7 +126,7 @@ bool Device::pickPhysicalDevice()
 
 void Device::createLogicalDevice()
 {
-    float queuePriority = 1.0f;
+    constexpr float queuePriority = 1.0f;
     DeviceCreateInfo createInfo;
     std::vector deviceExtension = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
     std::vector<DeviceQueueCreateInfo> queueCreateInfos;
@@ -134,7 +148,13 @@ void Device::createLogicalDevice()
     
     device_ = GPU_.createDevice(createInfo);
 
-    graphicsQueue = device_.getQueue(indices_.graphicsFamily.value(), 0);
-    presentQueue = device_.getQueue(indices_.presentFamily.value(), 0);
+    graphicsQueue = getQueue(indices_.graphicsFamily.value());
+    presentQueue = getQueue(indices_.presentFamily.value());
+}
+
+void Device::createPipelineCache()
+{
+    constexpr PipelineCacheCreateInfo createInfo;
+    pipelineCache_ = device_.createPipelineCache(createInfo);
 }
 }

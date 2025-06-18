@@ -7,7 +7,8 @@ namespace vkRender
 {
 void Logger::log(const char* massage)
 {
-    fmt::print(fg(fmt::color::white_smoke),
-             "[{}] {}!\n", "Info", massage);
+    auto format = fg(fmt::color::white_smoke);
+    
+    fmt::print(format, "[{}] {}!\n", "Info", massage);
 }
 }

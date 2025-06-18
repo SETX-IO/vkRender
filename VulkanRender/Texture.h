@@ -29,14 +29,16 @@ private:
     
     uByte *data_ = nullptr;
 
+    uint32_t mipLevels_;
+    
     vk::Format format_;
     vk::Image texture_;
-    vk::DeviceMemory memory_;
     vk::ImageView textureView_;
     vk::Sampler textureSampler_;
 
     void createImage(vk::ImageUsageFlags usage);
     void transitionLayout(vk::Format format, vk::ImageLayout old, vk::ImageLayout layout) const;
+    void generateMipmaps();
     void createSampler();
 };
 }

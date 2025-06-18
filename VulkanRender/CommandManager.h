@@ -14,7 +14,7 @@ public:
     void release() const;
     
     std::vector<vk::CommandBuffer> newCmdBuffers(uint32_t count);
-    void record(std::function<void(const vk::CommandBuffer&)> callback);
+    void record(const std::function<void(const vk::CommandBuffer&)>& callback);
 
     void freeCmdBuffer();
 private:
