@@ -11,16 +11,16 @@ namespace vkRender
 class Program
 {
 public:
-    static Program *create(const vk::RenderPass &renderPass, float w, float h);
+    static Program *create(const std::string& vertFile, const std::string& fragFile);
 
-    bool init(const vk::RenderPass &renderPass, float w, float h);
-    void addImageInfo(vk::DescriptorImageInfo imageInfo);
-    void addBufferInfo(bool isDynamic = false);
-    void buildDescriptorSet();
+    bool init(const std::string& vertFile, const std::string& fragFile);
+    void addImageInfo(const vk::DescriptorImageInfo& imageInfo);
     
     // void getUniform();
     void setUniform(int currentFrame, const void* data);
+    void setBinding(const std::vector<vk::DescriptorType> &bindings);
     void use(const vk::CommandBuffer &cmdBuf, int currentFrame);
+    void compile(const vk::RenderPass &renderPass, float w, float h);
     
     void release();
 private:
@@ -33,11 +33,10 @@ private:
     std::vector<Buffer*> uniformBuffers_;
     std::vector<vk::DescriptorSet> descriptorSets_;
 
+    std::vector<vk::DescriptorImageInfo> imageInfos_;
     std::vector<vk::WriteDescriptorSet> writes_;
-    std::vector<vk::DescriptorPoolSize> poolSizes_;
-    uint32_t bindingCount = 0;
     
-    void createDescriptorPool();
+    void createDescriptorPool(const std::vector<vk::DescriptorPoolSize> &poolSizes);
     void createDescriptorSets();
     void createPipelineLayout();
     void createPipeline(const vk::RenderPass &renderPass, float w, float h);

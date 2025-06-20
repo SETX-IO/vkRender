@@ -1,6 +1,8 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#include "d3d11.h"
+
 #include "Context.h"
 #include "Renderer.h"
 #include "fmt/args.h"
@@ -47,17 +49,12 @@ void init()
     for (int i = 0; i < count; ++i)
     {
         const char *extension = extensionArray[i];
-        
         extensions[i] = extension;
     }
     
-    context = vkRender::Context::getInstance(extensions,
-        [&](vk::Instance instance) {
-            VkSurfaceKHR surface;
-            if (glfwCreateWindowSurface(instance, window, nullptr, &surface))
-                return surface;
-            return surface;
-    });
+    context = vkRender::Context::getInstance(extensions);
+    
+    glfwCreateWindowSurface(context->getVkInstance(), window, nullptr, &context->getSurface());
 
     const std::vector<vkRender::Vertex> vertexes =
 {
@@ -92,13 +89,21 @@ void init()
     glfwGetWindowFrameSize(window, nullptr, nullptr, &width, &height);
 
     auto texture_ = vkRender::Texture::createFormFile("E:/Documents/Project/vkRender/build/bin/Debug/Resouces/image.jpg");
-    auto program = vkRender::Program::create(renderer->getSwapchain()->getRenderPass(), width, width);
-    program->addBufferInfo();
-    program->addImageInfo(texture_->newDescriptor());
-    program->buildDescriptorSet();
-
-    renderer->setProgram(program);
+    auto program = vkRender::Program::create("E:/Documents/Project/vkRender/build/bin/Debug/Resouces/vert.spv",
+        "E:/Documents/Project/vkRender/build/bin/Debug/Resouces/frag.spv");
     
+    program->compile(renderer->getSwapchain()->getRenderPass(), width, width);
+    program->addImageInfo(texture_->newDescriptor());
+    program->setBinding({
+        vk::DescriptorType::eUniformBuffer,
+        vk::DescriptorType::eCombinedImageSampler,
+    });
+    
+    renderer->setProgram(program);
+
+
+    // Release *release = texture_;
+    // release->release();
     // texture_->release();
     
 

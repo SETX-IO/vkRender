@@ -94,7 +94,6 @@ void Swapchain::queryInfo()
 {
     const auto& pDevice = Device::Instance()->getGPU();
     const auto& surface = Context::getInstance()->getSurface();
-    auto swapChainSupport = pDevice.getSurfaceCapabilitiesKHR(surface);
     auto capabilities = pDevice.getSurfaceCapabilitiesKHR(surface);
 
     info.imageCount = std::clamp(capabilities.minImageCount + 1, capabilities.minImageCount, capabilities.maxImageCount);
@@ -116,7 +115,7 @@ void Swapchain::queryInfo()
     actualExtent.height = std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
 
     info.extent = actualExtent;
-    info.transform = swapChainSupport.currentTransform;
+    info.transform = capabilities.currentTransform;
 
     auto presentModes = pDevice.getSurfacePresentModesKHR(surface);
     info.presentMode = PresentModeKHR::eFifo;

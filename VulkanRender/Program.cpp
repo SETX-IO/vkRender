@@ -8,60 +8,25 @@ namespace vkRender
 {
 US_VKN;
 
-Program* Program::create(const RenderPass &renderPass, float w, float h)
+Program* Program::create(const std::string& vertFile, const std::string& fragFile)
 {
     Program *uniform = new (std::nothrow) Program();
-    if (uniform && uniform->init(renderPass, w, h))
+    if (uniform && uniform->init(vertFile, fragFile))
     {
         return uniform;
     }
     return nullptr;
 }
 
-bool Program::init(const RenderPass &renderPass, float w, float h)
+bool Program::init(const std::string& vertFile, const std::string& fragFile)
 {
-    shader_ = Shader::create("E:/Documents/Project/vkRender/build/bin/Debug/Resouces/vert.spv",
-        "E:/Documents/Project/vkRender/build/bin/Debug/Resouces/frag.spv");
-    
-    createPipelineLayout();
-    createPipeline(renderPass, w, h);
-    
+    shader_ = Shader::create(vertFile, fragFile);
     return true;
 }
 
-void Program::addImageInfo(DescriptorImageInfo imageInfo)
+void Program::addImageInfo(const DescriptorImageInfo& imageInfo)
 {
-    DescriptorType type = DescriptorType::eCombinedImageSampler;
-    
-    WriteDescriptorSet set;
-    set.setDstBinding(bindingCount++)
-        .setDescriptorType(type)
-        .setImageInfo(imageInfo);
-
-    poolSizes_.emplace_back(type, MAX_FRAME_IN_FLIGHT);
-    writes_.push_back(set);
-}
-
-void Program::addBufferInfo(bool isDynamic)
-{
-    DescriptorType type = isDynamic ? DescriptorType::eUniformBufferDynamic : DescriptorType::eUniformBuffer;
-    WriteDescriptorSet set;
-    set.setDstBinding(bindingCount++)
-        .setDescriptorType(type);
-
-    poolSizes_.emplace_back(type, MAX_FRAME_IN_FLIGHT);
-    writes_.push_back(set);
-}
-
-void Program::buildDescriptorSet()
-{
-    uniformBuffers_.resize(MAX_FRAME_IN_FLIGHT);
-    for (int i = 0; i < MAX_FRAME_IN_FLIGHT; ++i)
-    {
-        uniformBuffers_[i] = Buffer::create(BufferUsageFlagBits::eUniformBuffer, sizeof(UniformObj));
-    }
-    createDescriptorPool();
-    createDescriptorSets();
+    imageInfos_.push_back(imageInfo);
 }
 
 void Program::setUniform(int currentFrame, const void* data)
@@ -69,10 +34,48 @@ void Program::setUniform(int currentFrame, const void* data)
     uniformBuffers_[currentFrame]->data(data);
 }
 
+void Program::setBinding(const std::vector<DescriptorType>& bindings)
+{
+    WriteDescriptorSet set;
+    std::vector<DescriptorPoolSize> poolSizes;
+    
+    for (int i = 0; i < bindings.size(); ++i)
+    {
+        auto binding = bindings[i];
+        poolSizes.emplace_back(binding, MAX_FRAME_IN_FLIGHT);
+        
+        if (binding == DescriptorType::eUniformBuffer || binding == DescriptorType::eUniformBufferDynamic)
+        {
+            uniformBuffers_.resize(MAX_FRAME_IN_FLIGHT);
+            for (int uniformBufCount = 0; uniformBufCount < MAX_FRAME_IN_FLIGHT; ++uniformBufCount)
+            {
+                uniformBuffers_[uniformBufCount] = Buffer::create(BufferUsageFlagBits::eUniformBuffer, sizeof(UniformObj));
+            }
+            auto info = uniformBuffers_[0]->newDescriptor();
+            set.setBufferInfo(info);
+        }
+        if (binding == DescriptorType::eCombinedImageSampler)
+        {
+            set.setImageInfo(imageInfos_[i % imageInfos_.size()]);
+        }
+        
+        set.setDstBinding(i).setDescriptorType(binding);
+        writes_.push_back(set);
+    }
+    createDescriptorPool(poolSizes);
+    createDescriptorSets();
+}
+
 void Program::use(const CommandBuffer& cmdBuf, int currentFrame)
 {
     cmdBuf.bindPipeline(PipelineBindPoint::eGraphics, graphicsPipeline_);
     cmdBuf.bindDescriptorSets(PipelineBindPoint::eGraphics, pipelineLayout_, 0, 1, &descriptorSets_[currentFrame], 0, nullptr);
+}
+
+void Program::compile(const RenderPass &renderPass, float w, float h)
+{
+    createPipelineLayout();
+    createPipeline(renderPass, w, h);
 }
 
 void Program::release()
@@ -89,11 +92,12 @@ void Program::release()
     }
 }
 
-void Program::createDescriptorPool()
+
+void Program::createDescriptorPool(const std::vector<DescriptorPoolSize>& poolSizes)
 {
     DescriptorPoolCreateInfo createInfo;
     createInfo
-        .setPoolSizes(poolSizes_)
+        .setPoolSizes(poolSizes)
         .setMaxSets(MAX_FRAME_IN_FLIGHT);
 
     descriptorPool_ = Device::Instance()->getDevice().createDescriptorPool(createInfo);
@@ -115,12 +119,6 @@ void Program::createDescriptorSets()
     {
         for (auto &write : writes_)
         {
-            if (write.descriptorType == DescriptorType::eUniformBuffer || write.descriptorType == DescriptorType::eUniformBufferDynamic)
-            {
-                auto bufferInfo = uniformBuffers_[i]->newDescriptor();
-                write.setBufferInfo(bufferInfo);
-            }
-            
             write.setDstSet(descriptorSets_[i]);
         }
 

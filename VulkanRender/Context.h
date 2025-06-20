@@ -7,32 +7,27 @@ namespace vkRender
 {
 static auto empty = std::vector<const char*>();
 
-using CreateSurfacerFunc = std::function<vk::SurfaceKHR(vk::Instance)>;
-
 class Context final
 {
 public:
     // get Context Instance. parameters use on initialize
-    static Context* getInstance(const std::vector<const char*> &extensions = empty, const CreateSurfacerFunc& func = nullptr);
+    static Context* getInstance(const std::vector<const char*> &extensions = empty);
+    
+    // get Vulkan instance
+    vk::Instance & getVkInstance() {return vkInstance_;}
+    VkSurfaceKHR &getSurface() {return surface_;}
+    
+    bool init(const std::vector<const char*>& extensions);
+    void release() const;
 
     Context() = default;
     ~Context();
-    
-    // get Vulkan instance
-    vk::Instance & getVkInstance() {return vkInstance;}
-    vk::SurfaceKHR &getSurface() {return surface;}
-    
-    bool init(const std::vector<const char*>& extensions, const CreateSurfacerFunc& func);
-
-    void release() const;
-    
-    void createVkInstance(const std::vector<const char*>& extensions);
+private:
+    vk::Instance vkInstance_;
+    VkSurfaceKHR surface_ = {};
     
     static Context* s_instance;
-
-private:
-    vk::Instance vkInstance;
     
-    vk::SurfaceKHR surface;
+    void createVkInstance(const std::vector<const char*>& extensions);
 };
 }

@@ -1,11 +1,12 @@
 ﻿#pragma once
 
 #include "Buffer.h"
+#include "Release.h"
 #include "vkRender.h"
 
 namespace vkRender
 {
-class Texture
+class Texture : public Release
 {
 public:
     static Texture *createFormFile(const std::string &fileName);
@@ -17,11 +18,12 @@ public:
     vk::DescriptorImageInfo newDescriptor() const;
     vk::Format getFormat() const {return format_;}
     
-    void release() const;
+    void release() const override ;
     const vk::ImageView &getView() const {return textureView_;}
 
     Texture() = default;
     Texture(uint32_t w, uint32_t h);
+    virtual ~Texture() = default;
 private:
     int width_ = 0;
     int height_ = 0;
