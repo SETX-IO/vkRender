@@ -7,7 +7,7 @@ set(lib_name VulkanRender)
 project(${lib_name})
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
-set(RES_FOLDER "${CMAKE_CURRENT_SOURCE_DIR}/Resouces")
+set(RES_FOLDER "${CMAKE_CURRENT_SOURCE_DIR}/Shaders")
 set(FMT_INSTALL OFF)
 
 find_package(Vulkan REQUIRED)

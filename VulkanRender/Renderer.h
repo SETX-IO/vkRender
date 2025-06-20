@@ -23,7 +23,7 @@ public:
     void addIndexData(const std::vector<uint16_t>& indices);
 
     void setProgram(Program* program);
-    Swapchain* getSwapchain() {return swapchain_;}
+    Swapchain* getSwapchain() const {return swapchain_;}
 
     void draw();
 private:

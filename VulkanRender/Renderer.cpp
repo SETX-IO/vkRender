@@ -32,12 +32,6 @@ bool Renderer::init()
     }
     swapchain_ = Swapchain::create();
     cmdBuffers_ = CommandManager::Instance()->newCmdBuffers(MAX_FRAME_IN_FLIGHT);
-    // texture_ = Texture::createFormFile("E:/Documents/Project/vkRender/build/bin/Debug/Resouces/image.jpg");
-
-    // program_.reset(Program::create(swapchain_->getRenderPass(), frameSize.x, frameSize.y));
-    // program_->addBufferInfo();
-    // program_->addImageInfo(texture_->newDescriptor());
-    // program_->buildDescriptorSet();
     
     return true;
 }
@@ -80,7 +74,7 @@ void Renderer::addIndexData(const std::vector<uint16_t>& indices)
 
 void Renderer::setProgram(Program* program)
 {
-    program_.reset(std::move(program));
+    program_.reset(program);
     program = nullptr;
 }
 

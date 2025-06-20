@@ -1,5 +1,6 @@
 ﻿#include "Program.h"
 
+#include "Context.h"
 #include "Device.h"
 #include "Shader.h"
 #include "Vertex.h"
@@ -72,10 +73,10 @@ void Program::use(const CommandBuffer& cmdBuf, int currentFrame)
     cmdBuf.bindDescriptorSets(PipelineBindPoint::eGraphics, pipelineLayout_, 0, 1, &descriptorSets_[currentFrame], 0, nullptr);
 }
 
-void Program::compile(const RenderPass &renderPass, float w, float h)
+void Program::compile(const RenderPass &renderPass)
 {
     createPipelineLayout();
-    createPipeline(renderPass, w, h);
+    createPipeline(renderPass);
 }
 
 void Program::release()
@@ -134,7 +135,7 @@ void Program::createPipelineLayout()
     pipelineLayout_ = Device::Instance()->getDevice().createPipelineLayout(createInfo);
 }
 
-void Program::createPipeline(const RenderPass &renderPass, float w, float h)
+void Program::createPipeline(const RenderPass &renderPass)
 {
     GraphicsPipelineCreateInfo createInfo;
     
@@ -162,8 +163,9 @@ void Program::createPipeline(const RenderPass &renderPass, float w, float h)
     createInfo.setPInputAssemblyState(&inputAssemblyInfo);
 
     // 视口和剪裁矩形
-    Viewport viewport {0, 0, w, h, 1.f};
-    Rect2D scissor {0, {static_cast<uint32_t>(w), static_cast<uint32_t>(h)}};
+    Extent2D frameSize = Context::getInstance()->getFrameSize();
+    Viewport viewport {0, 0, static_cast<float>(frameSize.width), static_cast<float>(frameSize.height), 1.f};
+    Rect2D scissor {0, frameSize};
     
     PipelineViewportStateCreateInfo viewportState;
     viewportState

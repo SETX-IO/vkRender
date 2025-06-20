@@ -1,8 +1,7 @@
 ﻿#pragma once
-
+#include "vkRender.h"
 #include "Buffer.h"
 #include "Release.h"
-#include "vkRender.h"
 
 namespace vkRender
 {
@@ -17,9 +16,9 @@ public:
 
     vk::DescriptorImageInfo newDescriptor() const;
     vk::Format getFormat() const {return format_;}
+    const vk::ImageView &getView() const {return textureView_;}
     
     void release() const override ;
-    const vk::ImageView &getView() const {return textureView_;}
 
     Texture() = default;
     Texture(uint32_t w, uint32_t h);

@@ -27,10 +27,10 @@ Context::~Context()
 
 bool Context::init(const std::vector<const char*>& extensions)
 {
-    bool result = false;
     createVkInstance(extensions);
+    debugUtil_ = DebugUtil::create(vkInstance_);
     
-    return result;
+    return true;
 }
 
 void Context::release() const
@@ -45,18 +45,13 @@ void Context::release() const
 
 void Context::createVkInstance(const std::vector<const char*>& extensions)
 {
+    InstanceCreateInfo createInfo;
     ApplicationInfo appInfo;
-    appInfo
-        .setApiVersion(VK_API_VERSION_1_4)
-        .setPApplicationName("VK Render")
-        .setPEngineName("Cocos2dx");
+    appInfo.setApiVersion(VK_API_VERSION_1_4);
+    createInfo.setPApplicationInfo(&appInfo);
 
     const std::vector enableLayers = { "VK_LAYER_KHRONOS_validation" };
-    InstanceCreateInfo createInfo;
-
-    createInfo
-        .setPEnabledLayerNames(enableLayers)
-        .setPApplicationInfo(&appInfo);
+    createInfo.setPEnabledLayerNames(enableLayers);
     
     if (!extensions.empty())
     {

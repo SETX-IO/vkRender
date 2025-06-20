@@ -94,11 +94,12 @@ void Swapchain::queryInfo()
 {
     const auto& pDevice = Device::Instance()->getGPU();
     const auto& surface = Context::getInstance()->getSurface();
-    auto capabilities = pDevice.getSurfaceCapabilitiesKHR(surface);
-
-    info.imageCount = std::clamp(capabilities.minImageCount + 1, capabilities.minImageCount, capabilities.maxImageCount);
     
+    auto capabilities = pDevice.getSurfaceCapabilitiesKHR(surface);
     auto Formats = pDevice.getSurfaceFormatsKHR(surface);
+    auto presentModes = pDevice.getSurfacePresentModesKHR(surface);
+
+    
     info.format = Formats[0];
     for (auto format : Formats)
     {
@@ -109,17 +110,7 @@ void Swapchain::queryInfo()
         }
     }
 
-    Extent2D actualExtent {640, 480};
-    
-    actualExtent.width = std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
-    actualExtent.height = std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
-
-    info.extent = actualExtent;
-    info.transform = capabilities.currentTransform;
-
-    auto presentModes = pDevice.getSurfacePresentModesKHR(surface);
     info.presentMode = PresentModeKHR::eFifo;
-    
     for (const auto& presentMode : presentModes)
     {
         if (presentMode == PresentModeKHR::eMailbox)
@@ -128,6 +119,13 @@ void Swapchain::queryInfo()
             break;
         }
     }
+
+    info.transform = capabilities.currentTransform;
+    info.imageCount = std::clamp(capabilities.minImageCount + 1, capabilities.minImageCount, capabilities.maxImageCount);
+    info.extent = Extent2D(
+        std::clamp(Context::getInstance()->getFrameSize().width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width),
+        std::clamp(Context::getInstance()->getFrameSize().height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height)
+        );
 }
 
 void Swapchain::createSwapChain()
