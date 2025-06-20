@@ -1,7 +1,6 @@
 ﻿#pragma once
 #include "vkRender.h"
 
-
 namespace vkRender
 {
 
@@ -17,8 +16,8 @@ public:
 
     void Release() const;
 private:
-    VkDebugUtilsMessengerEXT messenger_;
+    VkDebugUtilsMessengerEXT messenger_ = nullptr;
 
-    void createMessengr(vk::Instance instance);
+    void createMessenger(vk::Instance instance);
 };
 }

@@ -32,6 +32,7 @@ public:
     void release() const;
     void releaseSwapchain() const;
 
+    SwapchainInfo info{};
 private:
     std::vector<vk::ImageView> imageViews;
     std::vector<vk::Framebuffer> framebuffers_;
@@ -39,7 +40,6 @@ private:
     vk::RenderPass renderPass_;
 
     Texture *depthTexture = nullptr;
-    SwapchainInfo info{};
     
     void queryInfo();
     void createSwapChain();

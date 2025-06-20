@@ -22,7 +22,7 @@ Bool32 DebugUtil::debugInfoPrint(DebugUtilsMessageSeverityFlagBitsEXT type,
 }
 
 DebugUtil* DebugUtil::create(Instance instance)
-{
+{ 
     DebugUtil *util = new (std::nothrow) DebugUtil();
     if (util && util->init(instance))
     {
@@ -34,7 +34,7 @@ DebugUtil* DebugUtil::create(Instance instance)
 
 bool DebugUtil::init(Instance instance)
 {
-    createMessengr(instance);
+    createMessenger(instance);
     return true;
 }
 
@@ -45,7 +45,7 @@ void DebugUtil::Release() const
         getProcAddr("DestroyDebugUtilsMessengerEXT"))(instance, messenger_, nullptr);
 }
 
-void DebugUtil::createMessengr(Instance instance)
+void DebugUtil::createMessenger(Instance instance)
 {
     DebugUtilsMessengerCreateInfoEXT createInfo;
     createInfo

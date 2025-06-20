@@ -3,6 +3,9 @@
 #include "CommandManager.h"
 #include "Device.h"
 #include "Shader.h"
+#include "imgui/imgui_impl_glfw.h"
+#include "imgui/imgui_impl_vulkan.h"
+#include "imgui.h"
 
 namespace vkRender
 {
@@ -130,6 +133,24 @@ void Renderer::draw()
     cmdBuffers_[currentFrame].bindIndexBuffer(indexBuffer_->getBuffer(), 0, IndexType::eUint16);
     program_->use(cmdBuffers_[currentFrame], currentFrame);
     cmdBuffers_[currentFrame].drawIndexed(18, 1, 0, 0, 0);
+
+    // Start the Dear ImGui frame
+    ImGui_ImplVulkan_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+
+    // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
+    // if (show_demo_window)
+    ImGui::ShowDemoWindow();
+    
+    ImGui::Render();
+    ImDrawData* draw_data = ImGui::GetDrawData();
+    const bool is_minimized = (draw_data->DisplaySize.x <= 0.0f || draw_data->DisplaySize.y <= 0.0f);
+    if (!is_minimized) {
+
+
+        ImGui_ImplVulkan_RenderDrawData(draw_data, cmdBuffers_[currentFrame]);
+    }
     
     cmdBuffers_[currentFrame].endRenderPass();
     cmdBuffers_[currentFrame].end();

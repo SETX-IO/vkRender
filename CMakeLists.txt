@@ -1,4 +1,5 @@
-cmake_minimum_required(VERSION 3.6.0)
+
+cmake_minimum_required(VERSION 3.6)
 
 include(VulkanRender/CMakeLists.txt)
 include(extension/CMakeLists.txt)
@@ -22,7 +23,7 @@ execute_process(COMMAND ${GLSLC_PROFRAM} ${RES_FOLDER}/DefultPipeLine.frag -o ${
 
 add_library(${lib_name} STATIC ${RENDER_SRC})
 target_include_directories(${lib_name} PUBLIC VulkanRender extension)
-target_link_libraries(${lib_name} PUBLIC Vulkan::Vulkan fmt freetype)
+target_link_libraries(${lib_name} PUBLIC Vulkan::Vulkan fmt freetype imgui)
 target_compile_features(${lib_name} PUBLIC cxx_std_17)
 
 add_subdirectory(SandBox)
