@@ -20,6 +20,15 @@ Context* Context::getInstance(const std::vector<const char*>& extensions)
     return s_instance;
 }
 
+void Context::addReleaseObj(Release* obj)
+{
+    if (obj == nullptr)
+    {
+        return;
+    }
+    releasePool_.push_back(obj);
+}
+
 Context::~Context()
 {
     s_instance = nullptr;
@@ -35,13 +44,18 @@ bool Context::init(const std::vector<const char*>& extensions)
 
 void Context::release() const
 {
+    for (auto release : releasePool_)
+    {
+        release->release();
+        release = nullptr;
+    }
     Memory::release();
     Device::Instance()->release();
     
     vkInstance_.destroySurfaceKHR(surface_);
+    debugUtil_->destroy();
     vkInstance_.destroy();
 }
-
 
 void Context::createVkInstance(const std::vector<const char*>& extensions)
 {
@@ -50,7 +64,7 @@ void Context::createVkInstance(const std::vector<const char*>& extensions)
     appInfo.setApiVersion(VK_API_VERSION_1_4);
     createInfo.setPApplicationInfo(&appInfo);
 
-    const std::vector enableLayers = { "VK_LAYER_KHRONOS_validation" };
+    const std::vector enableLayers = { "VK_LAYER_KHRONOS_validation"};
     createInfo.setPEnabledLayerNames(enableLayers);
     
     if (!extensions.empty())

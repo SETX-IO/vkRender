@@ -142,7 +142,7 @@ void Program::createPipeline(const RenderPass &renderPass)
     std::array shaderStages = {shader_->vert, shader_->frag};
     createInfo.setStages(shaderStages);
     
-    constexpr std::array dynamicStates = {DynamicState::eViewport, DynamicState::eScissor};
+    constexpr std::array dynamicStates = {DynamicState::eViewport , DynamicState::eScissor};
     PipelineDynamicStateCreateInfo dynamicStateCreateInfo;
     dynamicStateCreateInfo.setDynamicStates(dynamicStates);
     createInfo.setPDynamicState(&dynamicStateCreateInfo);

@@ -3,6 +3,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "Device.h"
 #include "CommandManager.h"
+#include "Context.h"
 #include "stb_image.h"
 #include "Swapchain.h"
 #include "Memory/Memory.h"
@@ -15,6 +16,7 @@ Texture* Texture::createFormFile(const std::string& fileName)
     Texture *texture = new (std::nothrow) Texture();
     if (texture && texture->init(fileName))
     {
+        // Context::getInstance()->addReleaseObj(texture);
         return texture;
     }
     return nullptr;

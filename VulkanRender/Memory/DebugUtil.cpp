@@ -10,14 +10,36 @@ US_VKN;
 Bool32 DebugUtil::debugInfoPrint(DebugUtilsMessageSeverityFlagBitsEXT type,
     DebugUtilsMessageTypeFlagsEXT level, const DebugUtilsMessengerCallbackDataEXT* message, void* userData)
 {
-    if (level == DebugUtilsMessageTypeFlagBitsEXT::eValidation && type == DebugUtilsMessageSeverityFlagBitsEXT::eInfo)
+    if (level == DebugUtilsMessageTypeFlagBitsEXT::eValidation)
     {
-        fmt::print("[Validation]: {} \n", message->pMessage);
+        if (type == DebugUtilsMessageSeverityFlagBitsEXT::eInfo)
+        {
+            fmt::print("[Info | Validation]: {} \n", message->pMessage);
+        }
+        else if (type == DebugUtilsMessageSeverityFlagBitsEXT::eError)
+        {
+            fmt::print(fg(fmt::color::orange_red), "[Error | Validation]: {} \n", message->pMessage);
+        }
     }
-    else if (type == DebugUtilsMessageSeverityFlagBitsEXT::eError)
+    else if (level == DebugUtilsMessageTypeFlagBitsEXT::eGeneral)
     {
-        fmt::print(fg(fmt::color::red), "[Error|Validation]: {} \n", message->pMessage);
+        if (type == DebugUtilsMessageSeverityFlagBitsEXT::eInfo)
+        {
+            fmt::print("[General]: {} \n", message->pMessage);
+        }
     }
+    else if (level == DebugUtilsMessageTypeFlagBitsEXT::ePerformance)
+    {
+        if (type == DebugUtilsMessageSeverityFlagBitsEXT::eInfo)
+        {
+            fmt::print("[Performance]: {} \n", message->pMessage);
+        }
+        else if (type == DebugUtilsMessageSeverityFlagBitsEXT::eError)
+        {
+            fmt::print(fg(fmt::color::orange_red), "[Error | Performance]: {} \n", message->pMessage);
+        }
+    }
+
     return false;
 }
 
@@ -38,19 +60,20 @@ bool DebugUtil::init(Instance instance)
     return true;
 }
 
-void DebugUtil::Release() const
+void DebugUtil::destroy() const
 {
     Instance instance = Context::getInstance()->getVkInstance();
     reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(instance.
-        getProcAddr("DestroyDebugUtilsMessengerEXT"))(instance, messenger_, nullptr);
+        getProcAddr("vkDestroyDebugUtilsMessengerEXT"))(instance, messenger_, nullptr);
 }
 
 void DebugUtil::createMessenger(Instance instance)
 {
     DebugUtilsMessengerCreateInfoEXT createInfo;
     createInfo
-        .setMessageSeverity(DebugUtilsMessageSeverityFlagBitsEXT::eVerbose | DebugUtilsMessageSeverityFlagBitsEXT::eError | DebugUtilsMessageSeverityFlagBitsEXT::eInfo)
-        .setMessageType(DebugUtilsMessageTypeFlagBitsEXT::eValidation | DebugUtilsMessageTypeFlagBitsEXT::eGeneral)
+        .setMessageSeverity(DebugUtilsMessageSeverityFlagBitsEXT::eVerbose | DebugUtilsMessageSeverityFlagBitsEXT::eError |
+            DebugUtilsMessageSeverityFlagBitsEXT::eWarning | DebugUtilsMessageSeverityFlagBitsEXT::eInfo)
+        .setMessageType(DebugUtilsMessageTypeFlagBitsEXT::eValidation | DebugUtilsMessageTypeFlagBitsEXT::eGeneral | DebugUtilsMessageTypeFlagBitsEXT::ePerformance)
         .setPfnUserCallback(debugInfoPrint)
         .setPUserData(nullptr);
 

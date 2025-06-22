@@ -6,6 +6,7 @@
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_vulkan.h"
 #include "imgui.h"
+#include "Module.h"
 
 namespace vkRender
 {
@@ -41,13 +42,19 @@ bool Renderer::init()
 
 void Renderer::release() const
 {
+    // ImGui_ImplVulkan_Shutdown();
+    // ImGui_ImplGlfw_Shutdown();
+    // ImGui::DestroyContext();
+    
     Device::Instance()->presentQueue.waitIdle();
     CommandManager::Instance()->release();
     swapchain_->release();
     program_->release();
-    // texture_->release();
-    vertexBuffer_->release();
-    indexBuffer_->release();
+    for (auto module : modules_)
+    {
+        module->destroy();
+        module = nullptr;
+    }
 }
 
 void Renderer::addVertexData(const std::vector<Vertex>& vertices)
@@ -55,29 +62,19 @@ void Renderer::addVertexData(const std::vector<Vertex>& vertices)
     auto stagingBuffer = Buffer::create(BufferUsageFlagBits::eTransferSrc, sizeof(vertices[0]) * vertices.size());
     stagingBuffer->data(vertices.data());
     
-    vertexBuffer_.reset(Buffer::createDeviceLocal(BufferUsageFlagBits::eVertexBuffer | BufferUsageFlagBits::eTransferDst, stagingBuffer->size()));
+    vertexBuffer_ = Buffer::createDeviceLocal(BufferUsageFlagBits::eVertexBuffer | BufferUsageFlagBits::eTransferDst, stagingBuffer->size());
     stagingBuffer->copy(*vertexBuffer_);
 }
 
-void Renderer::addIndexData(const std::vector<uint32_t>& indices)
+void Renderer::addModule(Module* module)
 {
-    auto stagingBuffer = Buffer::create(BufferUsageFlagBits::eTransferSrc, sizeof(indices[0]) * indices.size());
-    stagingBuffer->data(indices.data());
-    indexBuffer_.reset(Buffer::createDeviceLocal(BufferUsageFlagBits::eIndexBuffer | BufferUsageFlagBits::eTransferDst, stagingBuffer->size()));
-    stagingBuffer->copy(*indexBuffer_);
-}
-
-void Renderer::addIndexData(const std::vector<uint16_t>& indices)
-{
-    auto stagingBuffer = Buffer::create(BufferUsageFlagBits::eTransferSrc, sizeof(indices[0]) * indices.size());
-    stagingBuffer->data(indices.data());
-    indexBuffer_.reset(Buffer::createDeviceLocal(BufferUsageFlagBits::eIndexBuffer | BufferUsageFlagBits::eTransferDst, stagingBuffer->size()));
-    stagingBuffer->copy(*indexBuffer_);
+    modules_.push_back(module);
+    module = nullptr;
 }
 
 void Renderer::setProgram(Program* program)
 {
-    program_.reset(program);
+    program_ = program;
     program = nullptr;
 }
 
@@ -129,28 +126,35 @@ void Renderer::draw()
     cmdBuffers_[currentFrame].setScissor(0, 1, &scissor);
 
     constexpr DeviceSize offset = 0;
-    cmdBuffers_[currentFrame].bindVertexBuffers(0, vertexBuffer_->getBuffer(), offset);
-    cmdBuffers_[currentFrame].bindIndexBuffer(indexBuffer_->getBuffer(), 0, IndexType::eUint16);
-    program_->use(cmdBuffers_[currentFrame], currentFrame);
-    cmdBuffers_[currentFrame].drawIndexed(18, 1, 0, 0, 0);
 
-    // Start the Dear ImGui frame
-    ImGui_ImplVulkan_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
-
-    // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-    // if (show_demo_window)
-    ImGui::ShowDemoWindow();
-    
-    ImGui::Render();
-    ImDrawData* draw_data = ImGui::GetDrawData();
-    const bool is_minimized = (draw_data->DisplaySize.x <= 0.0f || draw_data->DisplaySize.y <= 0.0f);
-    if (!is_minimized) {
-
-
-        ImGui_ImplVulkan_RenderDrawData(draw_data, cmdBuffers_[currentFrame]);
+    for (auto module : modules_)
+    {
+        program_->use(cmdBuffers_[currentFrame], currentFrame);
+        module->Renderer(cmdBuffers_[currentFrame], 1);
     }
+
+    // // Start the Dear ImGui frame
+    // ImGui_ImplVulkan_NewFrame();
+    // ImGui::NewFrame();
+    //
+    // // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
+    // // if (show_demo_window)
+    // ImGui::ShowDemoWindow();
+    //
+    // bool isOpen = true;
+    // ImGui::Begin("A", &isOpen, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize);
+    //
+    // ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+    // ImGui::Text("Gpu: %s", Device::Instance()->properties.deviceName.data());
+    //
+    // ImGui::End();
+    //
+    // ImGui::Render();
+    // ImDrawData* draw_data = ImGui::GetDrawData();
+    // const bool is_minimized = draw_data->DisplaySize.x <= 0.0f || draw_data->DisplaySize.y <= 0.0f;
+    // if (!is_minimized) {
+    //     ImGui_ImplVulkan_RenderDrawData(draw_data, cmdBuffers_[currentFrame]);
+    // }
     
     cmdBuffers_[currentFrame].endRenderPass();
     cmdBuffers_[currentFrame].end();

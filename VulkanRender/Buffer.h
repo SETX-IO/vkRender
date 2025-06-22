@@ -14,6 +14,7 @@ public:
     
     void data(const void* data) const;
     void copy(const Buffer &dstBuffer) const;
+    // void reSize(vk::DeviceSize size);
     
     void release() const;
     
@@ -30,6 +31,8 @@ private:
     void createBuffer(vk::BufferUsageFlags bufferType);
 
     vk::DeviceSize size_;
+    vk::BufferUsageFlags type_;
+    vk::MemoryPropertyFlags property_;
     
     vk::Buffer buffer_;
     // vk::DeviceMemory memory_;

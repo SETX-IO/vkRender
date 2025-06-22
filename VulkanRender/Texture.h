@@ -5,7 +5,7 @@
 
 namespace vkRender
 {
-class Texture : public Release
+class Texture
 {
 public:
     static Texture *createFormFile(const std::string &fileName);
@@ -18,7 +18,7 @@ public:
     vk::Format getFormat() const {return format_;}
     const vk::ImageView &getView() const {return textureView_;}
     
-    void release() const override ;
+    void release() const;
 
     Texture() = default;
     Texture(uint32_t w, uint32_t h);

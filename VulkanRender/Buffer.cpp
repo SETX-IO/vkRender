@@ -25,6 +25,7 @@ Buffer* Buffer::create(BufferUsageFlags bufferType, DeviceSize size)
 {
     Buffer *buffer = new (std::nothrow) Buffer(size);
     MemoryPropertyFlags property = MemoryPropertyFlagBits::eHostVisible | MemoryPropertyFlagBits::eHostCoherent;
+    
     if (buffer && buffer->init(bufferType, property))
     {
         return buffer;
@@ -35,7 +36,8 @@ Buffer* Buffer::create(BufferUsageFlags bufferType, DeviceSize size)
 bool Buffer::init(BufferUsageFlags bufferType, MemoryPropertyFlags property)
 {
     createBuffer(bufferType);
-
+    type_ = bufferType;
+    property_ = property;
     data_ = Memory::Binding(buffer_, property);
     
     return true;
@@ -47,14 +49,14 @@ void Buffer::release() const
 }
 
 DescriptorBufferInfo Buffer::newDescriptor() const
-{
-    DescriptorBufferInfo info;
-    info
-        .setBuffer(buffer_)
-        .setRange(size_);
-
-    return info;
-}
+ {
+     DescriptorBufferInfo info;
+     info
+         .setBuffer(buffer_)
+         .setRange(size_);
+ 
+     return info;
+ }
 
 void Buffer::copy(const Buffer& dstBuffer) const
 {
@@ -71,6 +73,13 @@ void Buffer::copy(const Buffer& dstBuffer) const
 
     release();
 }
+
+// void Buffer::reSize(DeviceSize size)
+// {
+//     release();
+//     size_ = size;
+//     init(type_, property_);
+// }
 
 void Buffer::data(const void* data) const
 {

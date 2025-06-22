@@ -14,7 +14,7 @@ public:
 
     bool init(vk::Instance instance);
 
-    void Release() const;
+    void destroy() const;
 private:
     VkDebugUtilsMessengerEXT messenger_ = nullptr;
 

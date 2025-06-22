@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include "Release.h"
 #include "glm/glm.hpp"
 
 #include "vkRender.h"
@@ -18,6 +19,7 @@ public:
     vk::Instance & getVkInstance() {return vkInstance_;}
     VkSurfaceKHR &getSurface() {return surface_;}
 
+    void addReleaseObj(Release *obj);
     void setFrameSize(uint32_t width, uint32_t height) { frameSize_ = vk::Extent2D(width, height); }
     const vk::Extent2D& getFrameSize() const {return frameSize_;}
     
@@ -29,6 +31,8 @@ public:
 private:
     vk::Instance vkInstance_;
     VkSurfaceKHR surface_ = {};
+
+    std::vector<Release *> releasePool_;
 
     DebugUtil *debugUtil_ = nullptr;
 

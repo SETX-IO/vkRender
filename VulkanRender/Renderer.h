@@ -1,15 +1,16 @@
 ﻿#pragma once
 
+#include "vkRender.h"
 #include "Context.h"
 #include "Program.h"
-#include "vkRender.h"
 #include "Texture.h"
 #include "Swapchain.h"
 #include "Vertex.h"
 
 namespace vkRender
 {
-// TODO: 将 Uniform 相关的功能抽取至 Uniform 类中
+class Module;
+
 class Renderer
 {
 public:
@@ -19,26 +20,26 @@ public:
     void release() const;
     
     void addVertexData(const std::vector<Vertex>& vertices);
-    void addIndexData(const std::vector<uint32_t>& indices);
-    void addIndexData(const std::vector<uint16_t>& indices);
+    void addModule(Module* module);
 
     void setProgram(Program* program);
     Swapchain* getSwapchain() const {return swapchain_;}
 
     void draw();
 private:
-    Texture *texture_ = nullptr;
     Swapchain *swapchain_ = nullptr;
-    std::unique_ptr<Program> program_ = nullptr;
+    Program* program_ = nullptr;
 
-    std::unique_ptr<Buffer> vertexBuffer_ = nullptr;
-    std::unique_ptr<Buffer> indexBuffer_ = nullptr;
+    Buffer* vertexBuffer_ = nullptr;
+    Buffer* indexBuffer_ = nullptr;
     
     std::vector<vk::CommandBuffer> cmdBuffers_;
 
     std::vector<vk::Semaphore> imageAvailableSemaphores;
     std::vector<vk::Semaphore> renderFinishedSemaphores;
     std::vector<vk::Fence> inFlightFences;
+
+    std::vector<Module *> modules_;
 
     int currentFrame = 0;
 
