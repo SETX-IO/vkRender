@@ -13,8 +13,8 @@ set(RENDER_HEADER
 	VulkanRender/Memory/DebugUtil.h
 	VulkanRender/Logger/Logger.h
 	VulkanRender/Vertex.h
-	VulkanRender/Release.h
 	VulkanRender/vkRender.h
+	VulkanRender/Release.h
 )
 
 set(RENDER_SRC

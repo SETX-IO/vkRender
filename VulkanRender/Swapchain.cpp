@@ -121,7 +121,7 @@ void Swapchain::queryInfo()
     }
 
     info.transform = capabilities.currentTransform;
-    info.imageCount = std::clamp(capabilities.minImageCount + 1, capabilities.minImageCount, capabilities.maxImageCount);
+    info.imageCount = std::clamp(capabilities.minImageCount + MAX_FRAME_IN_FLIGHT - capabilities.minImageCount, capabilities.minImageCount, capabilities.maxImageCount);
     info.extent = Extent2D(
         std::clamp(Context::getInstance()->getFrameSize().width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width),
         std::clamp(Context::getInstance()->getFrameSize().height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height)

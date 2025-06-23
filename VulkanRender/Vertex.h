@@ -7,26 +7,33 @@ namespace vkRender
 struct Vertex
 {
     float x, y, z, w, h;
-    
-    static vk::VertexInputBindingDescription getBinding()
-    {
-         vk::VertexInputBindingDescription binding;
-        binding
-            .setBinding(0)
-            .setInputRate(vk::VertexInputRate::eVertex)
-            .setStride(sizeof(Vertex));
-    
-        return binding;
-    }
 
-    static std::array<vk::VertexInputAttributeDescription, 2> getAttribute()
+    bool operator==(const Vertex& vertex) const noexcept
     {
-        constexpr std::array attributes = {
-            vk::VertexInputAttributeDescription{0, 0, vk::Format::eR32G32B32Sfloat, 0},
-            vk::VertexInputAttributeDescription{1, 0, vk::Format::eR32G32Sfloat, sizeof(float) * 3},
-        };
-    
-        return attributes;
+        return x == vertex.x && y == vertex.y && z == vertex.y && w == vertex.w && h == vertex.h;
     }
 };
+
+
 }
+
+namespace std
+{
+template<>
+struct hash<vkRender::Vertex>
+{
+    std::size_t operator()(const vkRender::Vertex& vertex) const noexcept
+    {
+        std::size_t h1 = std::hash<float>{}(vertex.x);
+        std::size_t h2 = std::hash<float>{}(vertex.y);
+        std::size_t h3 = std::hash<float>{}(vertex.z);
+        std::size_t h4 = std::hash<float>{}(vertex.w);
+        std::size_t h5 = std::hash<float>{}(vertex.h);
+    
+        return h1 + h2 + h3 + h4 + h5; // or use boost::hash_combine
+    }  
+};
+}
+
+
+

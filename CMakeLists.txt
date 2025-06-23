@@ -23,6 +23,7 @@ execute_process(COMMAND ${GLSLC_PROFRAM} ${RES_FOLDER}/DefultPipeLine.frag -o ${
 
 add_library(${lib_name} STATIC ${RENDER_SRC})
 target_include_directories(${lib_name} PUBLIC VulkanRender extension)
+target_precompile_headers(${lib_name} PRIVATE VulkanRender/vkRender.h)
 target_link_libraries(${lib_name} PUBLIC Vulkan::Vulkan fmt freetype imgui)
 target_compile_features(${lib_name} PUBLIC cxx_std_17)
 

@@ -125,8 +125,6 @@ void Renderer::draw()
     cmdBuffers_[currentFrame].setViewport(0, 1, &viewport);
     cmdBuffers_[currentFrame].setScissor(0, 1, &scissor);
 
-    constexpr DeviceSize offset = 0;
-
     for (auto module : modules_)
     {
         program_->use(cmdBuffers_[currentFrame], currentFrame);

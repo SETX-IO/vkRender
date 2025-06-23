@@ -10,10 +10,10 @@ class Module
 {
 public:
     static Module* create(const std::string& moduleName, const std::string& textureName);
-    static Module* createFormData(const std::vector<Vertex>& vertices, const std::vector<uint16_t>& indices, const std::string& textureName);
+    static Module* createFormData(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices, const std::string& textureName);
 
     bool init(const std::string& moduleName, const std::string& textureName);
-    bool init(const std::vector<Vertex>& vertices, const std::vector<uint16_t>& indices, const std::string& textureName);
+    bool init(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices, const std::string& textureName);
 
     void Renderer(const vk::CommandBuffer& cmdBuf, uint32_t instanceCount) const;
 

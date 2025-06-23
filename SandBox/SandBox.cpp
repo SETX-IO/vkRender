@@ -99,7 +99,7 @@ void init()
         {0.8f, 0.8f, -0.8f, 1.f, 1.f},
     };
 
-    const std::vector<uint16_t> indices = {
+    const std::vector<uint32_t> indices = {
         0, 1, 2, 2, 3, 0,
         4, 5, 6, 6, 7, 4,
         8, 9, 10, 10, 11, 8,
@@ -109,23 +109,31 @@ void init()
     };
     
     auto module = vkRender::Module::createFormData(vertexes, indices, "E:/Documents/Project/vkRender/build/bin/Debug/Resouces/image.jpg");
+    // auto module = vkRender::Module::create("E:/Documents/Project/vkRender/build/bin/Debug/Resouces/viking_room.obj",
+    //     "E:/Documents/Project/vkRender/build/bin/Debug/Resouces/viking_room.png");
     
     renderer = vkRender::Renderer::create();
-    renderer->addModule(module);
-
     
     auto program = vkRender::Program::create("E:/Documents/Project/vkRender/build/bin/Debug/Resouces/vert.spv",
         "E:/Documents/Project/vkRender/build/bin/Debug/Resouces/frag.spv");
     
-    program->compile(renderer->getSwapchain()->getRenderPass());
-    program->addImageInfo(module->getTexture().newDescriptor());
+    renderer->setProgram(program);
+    renderer->addModule(module);
     program->setBinding({
+        {0, sizeof(vkRender::Vertex), vk::VertexInputRate::eVertex},
+    });
+    program->setAttribute({
+        {0, 0, vk::Format::eR32G32B32Sfloat, 0},
+        {1, 0, vk::Format::eR32G32Sfloat, sizeof(float) * 3}
+    });
+    program->compile(renderer->getSwapchain()->getRenderPass());
+    
+    program->addImageInfo(module->getTexture().newDescriptor());
+    program->setDescriptor({
         vk::DescriptorType::eUniformBuffer,
         vk::DescriptorType::eCombinedImageSampler,
     });
     
-    renderer->setProgram(program);
-
     // IMGUI_CHECKVERSION();
     // ImGui::CreateContext();
     // ImGuiIO& io = ImGui::GetIO(); (void)io;

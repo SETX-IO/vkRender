@@ -6,6 +6,12 @@
 
 namespace vkRender
 {
+struct VertexInputInfo
+{
+    std::vector<vk::VertexInputBindingDescription> binding;
+    std::vector<vk::VertexInputAttributeDescription> attribute;
+};
+
 class Program
 {
 public:
@@ -16,19 +22,22 @@ public:
     
     // void getUniform();
     void setUniform(int currentFrame, const void* data);
-    void setBinding(const std::vector<vk::DescriptorType> &bindings);
-    void use(const vk::CommandBuffer &cmdBuf, int currentFrame);
+    void setDescriptor(const std::vector<vk::DescriptorType> &bindings);
+    void setBinding(const std::vector<vk::VertexInputBindingDescription>& binding);
+    void setAttribute(const std::vector<vk::VertexInputAttributeDescription>& attribute);
+    void use(const vk::CommandBuffer &cmdBuf, int currentFrame) const;
     void compile(const vk::RenderPass &renderPass);
     
-    void release();
+    void release() const;
 private:
     Shader *shader_ = nullptr;
+    VertexInputInfo vertexInput_;
     vk::Pipeline graphicsPipeline_;
     vk::PipelineLayout pipelineLayout_;
     
     // vk::DescriptorSetLayout pipelineSetLayout_;
     vk::DescriptorPool descriptorPool_;
-    std::vector<Buffer*> uniformBuffers_;
+    std::vector<Buffer*> uniformBuffers_ {MAX_FRAME_IN_FLIGHT, nullptr};
     std::vector<vk::DescriptorSet> descriptorSets_;
 
     std::vector<vk::DescriptorImageInfo> imageInfos_;
@@ -37,6 +46,6 @@ private:
     void createDescriptorPool(const std::vector<vk::DescriptorPoolSize> &poolSizes);
     void createDescriptorSets();
     void createPipelineLayout();
-    void createPipeline(const vk::RenderPass &renderPass);
+    void createPipeline(const vk::RenderPass &renderPass, const VertexInputInfo& vertexInput);
 };
 }

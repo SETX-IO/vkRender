@@ -2,15 +2,13 @@
 
 #include "vkRender.h"
 #include "Context.h"
+#include "Module.h"
 #include "Program.h"
-#include "Texture.h"
 #include "Swapchain.h"
 #include "Vertex.h"
 
 namespace vkRender
 {
-class Module;
-
 class Renderer
 {
 public:
@@ -31,7 +29,6 @@ private:
     Program* program_ = nullptr;
 
     Buffer* vertexBuffer_ = nullptr;
-    Buffer* indexBuffer_ = nullptr;
     
     std::vector<vk::CommandBuffer> cmdBuffers_;
 

@@ -35,7 +35,7 @@ void Program::setUniform(int currentFrame, const void* data)
     uniformBuffers_[currentFrame]->data(data);
 }
 
-void Program::setBinding(const std::vector<DescriptorType>& bindings)
+void Program::setDescriptor(const std::vector<DescriptorType>& bindings)
 {
     WriteDescriptorSet set;
     std::vector<DescriptorPoolSize> poolSizes;
@@ -47,13 +47,10 @@ void Program::setBinding(const std::vector<DescriptorType>& bindings)
         
         if (binding == DescriptorType::eUniformBuffer || binding == DescriptorType::eUniformBufferDynamic)
         {
-            uniformBuffers_.resize(MAX_FRAME_IN_FLIGHT);
             for (int uniformBufCount = 0; uniformBufCount < MAX_FRAME_IN_FLIGHT; ++uniformBufCount)
             {
                 uniformBuffers_[uniformBufCount] = Buffer::create(BufferUsageFlagBits::eUniformBuffer, sizeof(UniformObj));
             }
-            auto info = uniformBuffers_[0]->newDescriptor();
-            set.setBufferInfo(info);
         }
         if (binding == DescriptorType::eCombinedImageSampler)
         {
@@ -67,7 +64,17 @@ void Program::setBinding(const std::vector<DescriptorType>& bindings)
     createDescriptorSets();
 }
 
-void Program::use(const CommandBuffer& cmdBuf, int currentFrame)
+void Program::setBinding(const std::vector<VertexInputBindingDescription>& binding)
+{
+    vertexInput_.binding = binding;
+}
+
+void Program::setAttribute(const std::vector<VertexInputAttributeDescription>& attribute)
+{
+    vertexInput_.attribute = attribute;
+}
+
+void Program::use(const CommandBuffer& cmdBuf, int currentFrame) const
 {
     cmdBuf.bindPipeline(PipelineBindPoint::eGraphics, graphicsPipeline_);
     cmdBuf.bindDescriptorSets(PipelineBindPoint::eGraphics, pipelineLayout_, 0, 1, &descriptorSets_[currentFrame], 0, nullptr);
@@ -76,10 +83,10 @@ void Program::use(const CommandBuffer& cmdBuf, int currentFrame)
 void Program::compile(const RenderPass &renderPass)
 {
     createPipelineLayout();
-    createPipeline(renderPass);
+    createPipeline(renderPass, vertexInput_);
 }
 
-void Program::release()
+void Program::release() const
 {
     Device::Instance()->getDevice().destroyPipeline(graphicsPipeline_);
     Device::Instance()->getDevice().destroyPipelineLayout(pipelineLayout_);
@@ -120,6 +127,11 @@ void Program::createDescriptorSets()
     {
         for (auto &write : writes_)
         {
+            if (write.descriptorType == DescriptorType::eUniformBuffer || write.descriptorType == DescriptorType::eUniformBufferDynamic)
+            {
+                auto info = uniformBuffers_[i]->newDescriptor();
+                write.setBufferInfo(info);
+            }   
             write.setDstSet(descriptorSets_[i]);
         }
 
@@ -135,7 +147,7 @@ void Program::createPipelineLayout()
     pipelineLayout_ = Device::Instance()->getDevice().createPipelineLayout(createInfo);
 }
 
-void Program::createPipeline(const RenderPass &renderPass)
+void Program::createPipeline(const RenderPass &renderPass, const VertexInputInfo& vertexInput)
 {
     GraphicsPipelineCreateInfo createInfo;
     
@@ -148,13 +160,13 @@ void Program::createPipeline(const RenderPass &renderPass)
     createInfo.setPDynamicState(&dynamicStateCreateInfo);
 
     
-    auto attribute = Vertex::getAttribute();
-    auto bindings = Vertex::getBinding();
+    // auto attribute = Vertex::getAttribute();
+    // auto bindings = Vertex::getBinding();
     // 顶点输入
     PipelineVertexInputStateCreateInfo vertexInputInfo;
     vertexInputInfo
-        .setVertexAttributeDescriptions(attribute)
-        .setVertexBindingDescriptions(bindings);
+        .setVertexAttributeDescriptions(vertexInput_.attribute)
+        .setVertexBindingDescriptions(vertexInput_.binding);
     createInfo.setPVertexInputState(&vertexInputInfo);
 
     // 输入汇编
