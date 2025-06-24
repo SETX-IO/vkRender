@@ -38,7 +38,7 @@ private:
     // vk::DescriptorSetLayout pipelineSetLayout_;
     vk::DescriptorPool descriptorPool_;
     std::vector<Buffer*> uniformBuffers_ {MAX_FRAME_IN_FLIGHT, nullptr};
-    std::vector<vk::DescriptorSet> descriptorSets_;
+    std::vector<vk::DescriptorSet> descriptorSets_ {MAX_FRAME_IN_FLIGHT};
 
     std::vector<vk::DescriptorImageInfo> imageInfos_;
     std::vector<vk::WriteDescriptorSet> writes_;

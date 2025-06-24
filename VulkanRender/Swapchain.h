@@ -34,8 +34,8 @@ public:
 
     SwapchainInfo info{};
 private:
-    std::vector<vk::ImageView> imageViews;
-    std::vector<vk::Framebuffer> framebuffers_;
+    std::vector<vk::ImageView> imageViews {MAX_FRAME_IN_FLIGHT};
+    std::vector<vk::Framebuffer> framebuffers_ {MAX_FRAME_IN_FLIGHT};
     vk::SwapchainKHR swapchain_;
     vk::RenderPass renderPass_;
 

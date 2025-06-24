@@ -1,8 +1,6 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
-#include "fmt/args.h"
-// #include "fmt/color.h"
-// #include "freetype/ftbbox.h"
+#include <fmt/color.h>
 
 #include "Context.h"
 #include "Device.h"
@@ -11,19 +9,18 @@
 // #include "imgui/imgui_impl_glfw.h"
 // #include "imgui/imgui_impl_vulkan.h"
 // #include "imgui.h"
-// #include "Logger/Logger.h"
 
 GLFWwindow* window = nullptr;
 vkRender::Context *context = nullptr;
 vkRender::Renderer *renderer = nullptr;
 
+void init();
 void mainLoop();
-static void init();
+void resetCallback(GLFWwindow*, int, int);
 
 int main(int argc, char* argv[])
 {
     glfwInit();
-
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
@@ -55,7 +52,8 @@ void init()
     extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     
     context = vkRender::Context::getInstance(extensions);
-    
+
+    glfwSetFramebufferSizeCallback(window, resetCallback);
     glfwCreateWindowSurface(context->getVkInstance(), window, nullptr, &context->getSurface());
     glfwGetWindowFrameSize(window, nullptr, nullptr, &width, &height);
     context->setFrameSize(width, height);
@@ -133,45 +131,20 @@ void init()
         vk::DescriptorType::eUniformBuffer,
         vk::DescriptorType::eCombinedImageSampler,
     });
-    
-    // IMGUI_CHECKVERSION();
-    // ImGui::CreateContext();
-    // ImGuiIO& io = ImGui::GetIO(); (void)io;
-    // io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-    // io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
-    //
-    // auto device = vkRender::Device::Instance();
-    // ImGui::StyleColorsDark();
-    //
-    // ImGui_ImplGlfw_InitForVulkan(window, true);
-    // ImGui_ImplVulkan_InitInfo initInfo = {};
-    // initInfo.Instance = context->getVkInstance();
-    // initInfo.PhysicalDevice = device->getGPU();
-    // initInfo.Device = device->getDevice();
-    // initInfo.QueueFamily = device->indices_.graphicsFamily.value();
-    // initInfo.Queue = device->graphicsQueue;
-    // initInfo.PipelineCache = device->getPipelineCache();
-    // initInfo.DescriptorPoolSize = 9;
-    // initInfo.RenderPass = renderer->getSwapchain()->getRenderPass();
-    // initInfo.Subpass = 0;
-    // initInfo.MinImageCount = renderer->getSwapchain()->info.imageCount;
-    // initInfo.ImageCount = renderer->getSwapchain()->info.imageCount;
-    // initInfo.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
-    // initInfo.Allocator = nullptr;
-    // ImGui_ImplVulkan_Init(&initInfo);
-
-    // Release *release = texture_;
-    // release->release();
-    // texture_->release();
 
     // vkRender::Logger log;
     //
     // log.log("Hello World");
 }
 
+void resetCallback(GLFWwindow* window, int wight, int height)
+{
+    fmt::print(fg(fmt::color::white), "[glfw] window Size Width: {} Height: {}\n", wight, height);
+    context->setFrameSize(wight, height);
+}
+
 void mainLoop()
 {
-    // ImGui_ImplGlfw_NewFrame();
-    
+    renderer->update();
     renderer->draw();
 }

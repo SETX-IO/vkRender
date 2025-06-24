@@ -17,12 +17,13 @@ public:
     bool init();
     void release() const;
     
-    void addVertexData(const std::vector<Vertex>& vertices);
-    void addModule(Module* module);
+    Renderer& addVertexData(const std::vector<Vertex>& vertices);
+    Renderer& addModule(Module* module);
 
-    void setProgram(Program* program);
+    Renderer& setProgram(Program* program);
     Swapchain* getSwapchain() const {return swapchain_;}
 
+    void update();
     void draw();
 private:
     Swapchain *swapchain_ = nullptr;
@@ -32,9 +33,9 @@ private:
     
     std::vector<vk::CommandBuffer> cmdBuffers_;
 
-    std::vector<vk::Semaphore> imageAvailableSemaphores;
-    std::vector<vk::Semaphore> renderFinishedSemaphores;
-    std::vector<vk::Fence> inFlightFences;
+    std::vector<vk::Semaphore> imageAvailableSemaphores {MAX_FRAME_IN_FLIGHT};
+    std::vector<vk::Semaphore> renderFinishedSemaphores {MAX_FRAME_IN_FLIGHT};
+    std::vector<vk::Fence> inFlightFences {MAX_FRAME_IN_FLIGHT};
 
     std::vector<Module *> modules_;
 

@@ -10,34 +10,27 @@ US_VKN;
 Bool32 DebugUtil::debugInfoPrint(DebugUtilsMessageSeverityFlagBitsEXT type,
     DebugUtilsMessageTypeFlagsEXT level, const DebugUtilsMessengerCallbackDataEXT* message, void* userData)
 {
+    fmt::text_style color; ;
     if (level == DebugUtilsMessageTypeFlagBitsEXT::eValidation)
     {
         if (type == DebugUtilsMessageSeverityFlagBitsEXT::eInfo)
         {
-            fmt::print("[Info | Validation]: {} \n", message->pMessage);
+            color = fg(fmt::color::white);
+            fmt::print(color, "[vulkan|Validation]: {} \n", message->pMessage);
         }
         else if (type == DebugUtilsMessageSeverityFlagBitsEXT::eError)
         {
-            fmt::print(fg(fmt::color::orange_red), "[Error | Validation]: {} \n", message->pMessage);
+            color = fg(fmt::color::orange_red);
+            fmt::print(color, "[vulkan|Validation]: {} \n", message->pMessage);
         }
     }
     else if (level == DebugUtilsMessageTypeFlagBitsEXT::eGeneral)
     {
-        if (type == DebugUtilsMessageSeverityFlagBitsEXT::eInfo)
-        {
-            fmt::print("[General]: {} \n", message->pMessage);
-        }
+        fmt::print(fg(fmt::color::white), "[General]: {} \n", message->pMessage);
     }
     else if (level == DebugUtilsMessageTypeFlagBitsEXT::ePerformance)
     {
-        if (type == DebugUtilsMessageSeverityFlagBitsEXT::eInfo)
-        {
-            fmt::print("[Performance]: {} \n", message->pMessage);
-        }
-        else if (type == DebugUtilsMessageSeverityFlagBitsEXT::eError)
-        {
-            fmt::print(fg(fmt::color::orange_red), "[Error | Performance]: {} \n", message->pMessage);
-        }
+        fmt::print("[Performance]: {} \n", message->pMessage);
     }
 
     return false;

@@ -3,9 +3,6 @@
 #include "CommandManager.h"
 #include "Device.h"
 #include "Shader.h"
-#include "imgui/imgui_impl_glfw.h"
-#include "imgui/imgui_impl_vulkan.h"
-#include "imgui.h"
 #include "Module.h"
 
 namespace vkRender
@@ -23,10 +20,6 @@ Renderer* Renderer::create()
 
 bool Renderer::init()
 {
-    imageAvailableSemaphores.resize(MAX_FRAME_IN_FLIGHT);
-    renderFinishedSemaphores.resize(MAX_FRAME_IN_FLIGHT);
-    inFlightFences.resize(MAX_FRAME_IN_FLIGHT);
-
     const auto device = Device::Instance();
     for (int i = 0; i < MAX_FRAME_IN_FLIGHT; ++i)
     {
@@ -42,10 +35,6 @@ bool Renderer::init()
 
 void Renderer::release() const
 {
-    // ImGui_ImplVulkan_Shutdown();
-    // ImGui_ImplGlfw_Shutdown();
-    // ImGui::DestroyContext();
-    
     Device::Instance()->presentQueue.waitIdle();
     CommandManager::Instance()->release();
     swapchain_->release();
@@ -57,46 +46,52 @@ void Renderer::release() const
     }
 }
 
-void Renderer::addVertexData(const std::vector<Vertex>& vertices)
+Renderer& Renderer::addVertexData(const std::vector<Vertex>& vertices)
 {
     auto stagingBuffer = Buffer::create(BufferUsageFlagBits::eTransferSrc, sizeof(vertices[0]) * vertices.size());
     stagingBuffer->data(vertices.data());
     
     vertexBuffer_ = Buffer::createDeviceLocal(BufferUsageFlagBits::eVertexBuffer | BufferUsageFlagBits::eTransferDst, stagingBuffer->size());
     stagingBuffer->copy(*vertexBuffer_);
+
+    return *this;
 }
 
-void Renderer::addModule(Module* module)
+Renderer& Renderer::addModule(Module* module)
 {
     modules_.push_back(module);
     module = nullptr;
+
+    return *this;
 }
 
-void Renderer::setProgram(Program* program)
+Renderer& Renderer::setProgram(Program* program)
 {
     program_ = program;
     program = nullptr;
+
+    return *this;
+}
+
+void Renderer::update()
+{
+    updateUniform();
 }
 
 void Renderer::draw()
 {
     const auto device = Device::Instance()->getDevice();
 
-    const auto res1 = device.waitForFences(inFlightFences[currentFrame], true, std::numeric_limits<uint64_t>::max());
-    if (res1 != Result::eSuccess)
-    {
-        std::cout << "????" << "\t";
-        return;
-    }
-    device.resetFences(inFlightFences[currentFrame]);
-
+    device.waitForFences(inFlightFences[currentFrame], true, std::numeric_limits<uint64_t>::max());
+    
     const auto res =  device.acquireNextImageKHR(swapchain_->get(), std::numeric_limits<uint32_t>::max(), imageAvailableSemaphores[currentFrame], nullptr);
+
     if (res.result == Result::eErrorOutOfDateKHR)
     {
         swapchain_->reCreate();
         return;
     }
-    if (res.result != Result::eSuccess)
+    else if (res.result != Result::eSuccess && res.result != Result::eSuboptimalKHR)
     {
         std::cout << "?" << "\t";
         return;
@@ -104,6 +99,8 @@ void Renderer::draw()
     
     uint32_t imageIndex = res.value;
     cmdBuffers_[currentFrame].reset();
+    device.resetFences(inFlightFences[currentFrame]);
+    
     
     constexpr CommandBufferBeginInfo beginInfo;
 
@@ -130,35 +127,10 @@ void Renderer::draw()
         program_->use(cmdBuffers_[currentFrame], currentFrame);
         module->Renderer(cmdBuffers_[currentFrame], 1);
     }
-
-    // // Start the Dear ImGui frame
-    // ImGui_ImplVulkan_NewFrame();
-    // ImGui::NewFrame();
-    //
-    // // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-    // // if (show_demo_window)
-    // ImGui::ShowDemoWindow();
-    //
-    // bool isOpen = true;
-    // ImGui::Begin("A", &isOpen, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize);
-    //
-    // ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-    // ImGui::Text("Gpu: %s", Device::Instance()->properties.deviceName.data());
-    //
-    // ImGui::End();
-    //
-    // ImGui::Render();
-    // ImDrawData* draw_data = ImGui::GetDrawData();
-    // const bool is_minimized = draw_data->DisplaySize.x <= 0.0f || draw_data->DisplaySize.y <= 0.0f;
-    // if (!is_minimized) {
-    //     ImGui_ImplVulkan_RenderDrawData(draw_data, cmdBuffers_[currentFrame]);
-    // }
     
     cmdBuffers_[currentFrame].endRenderPass();
     cmdBuffers_[currentFrame].end();
     
-    updateUniform();
-
     SubmitInfo submitInfo;
     constexpr std::array<PipelineStageFlags, 1> waitStages = {PipelineStageFlagBits::eColorAttachmentOutput};
     
@@ -176,7 +148,8 @@ void Renderer::draw()
         .setSwapchains(swapchain_->get())
         .setPImageIndices(&imageIndex);
 
-    if (const auto result = Device::Instance()->presentQueue.presentKHR(&presentInfo); result == Result::eErrorOutOfDateKHR)
+    const auto result = Device::Instance()->presentQueue.presentKHR(&presentInfo);
+    if (result == Result::eErrorOutOfDateKHR || result == Result::eSuboptimalKHR)
     {
         swapchain_->reCreate();
     }

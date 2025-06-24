@@ -114,7 +114,6 @@ void Program::createDescriptorPool(const std::vector<DescriptorPoolSize>& poolSi
 void Program::createDescriptorSets()
 {
     std::vector layouts(MAX_FRAME_IN_FLIGHT, shader_->getSetLayout());
-    descriptorSets_.resize(MAX_FRAME_IN_FLIGHT);
     
     DescriptorSetAllocateInfo allocateInfo;
     allocateInfo
@@ -165,8 +164,8 @@ void Program::createPipeline(const RenderPass &renderPass, const VertexInputInfo
     // 顶点输入
     PipelineVertexInputStateCreateInfo vertexInputInfo;
     vertexInputInfo
-        .setVertexAttributeDescriptions(vertexInput_.attribute)
-        .setVertexBindingDescriptions(vertexInput_.binding);
+        .setVertexAttributeDescriptions(vertexInput.attribute)
+        .setVertexBindingDescriptions(vertexInput.binding);
     createInfo.setPVertexInputState(&vertexInputInfo);
 
     // 输入汇编

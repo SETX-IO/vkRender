@@ -95,7 +95,7 @@ void Module::Renderer(const CommandBuffer& cmdBuf, uint32_t instanceCount) const
     cmdBuf.drawIndexed(indexCount, instanceCount, 0, 0, 0);
 }
 
-void Module::destroy()
+void Module::destroy() const
 {
     vertexBuffer_->release();
     indexBuffer_->release();

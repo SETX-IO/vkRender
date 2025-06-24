@@ -34,9 +34,16 @@ bool Swapchain::init()
 void Swapchain::reCreate()
 {
     Device::Instance()->getDevice().waitIdle();
+
+    auto frameSize = Context::getInstance()->getFrameSize();
+    if (frameSize == Extent2D{0, 0})
+    {
+        return;
+    }
     
     releaseSwapchain();
-    
+
+    queryInfo();
     createSwapChain();
     createFramebuffer();
 }
@@ -166,9 +173,6 @@ void Swapchain::createFramebuffer()
     auto device = Device::Instance();
 
     std::vector images = device->getDevice().getSwapchainImagesKHR(swapchain_);
-
-    imageViews.resize(images.size());
-    framebuffers_.resize(imageViews.size());
     
     for (int i = 0; i < images.size(); ++i)
     {

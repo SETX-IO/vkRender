@@ -17,7 +17,7 @@ public:
 
     void Renderer(const vk::CommandBuffer& cmdBuf, uint32_t instanceCount) const;
 
-    void destroy();
+    void destroy() const;
     
     const Texture& getTexture() const {return *texture_;}
     
