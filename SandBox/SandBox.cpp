@@ -6,9 +6,6 @@
 #include "Device.h"
 #include "Module.h"
 #include "Renderer.h"
-// #include "imgui/imgui_impl_glfw.h"
-// #include "imgui/imgui_impl_vulkan.h"
-// #include "imgui.h"
 
 GLFWwindow* window = nullptr;
 vkRender::Context *context = nullptr;
@@ -53,6 +50,7 @@ void init()
     
     context = vkRender::Context::getInstance(extensions);
 
+    vkRender::Gui::init(window);
     glfwSetFramebufferSizeCallback(window, resetCallback);
     glfwCreateWindowSurface(context->getVkInstance(), window, nullptr, &context->getSurface());
     glfwGetWindowFrameSize(window, nullptr, nullptr, &width, &height);

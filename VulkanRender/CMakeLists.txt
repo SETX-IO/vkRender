@@ -11,6 +11,7 @@ set(RENDER_HEADER
 	VulkanRender/Module.h
 	VulkanRender/Memory/Memory.h
 	VulkanRender/Memory/DebugUtil.h
+	VulkanRender/Extensions/Gui.h
 	VulkanRender/Logger/Logger.h
 	VulkanRender/Vertex.h
 	VulkanRender/vkRender.h
@@ -28,6 +29,7 @@ set(RENDER_SRC
 	VulkanRender/Program.cpp
 	VulkanRender/Texture.cpp
 	VulkanRender/Module.cpp
+	VulkanRender/Extensions/Gui.cpp
 	VulkanRender/Memory/Memory.cpp
 	VulkanRender/Memory/DebugUtil.cpp
 	VulkanRender/Logger/Logger.cpp

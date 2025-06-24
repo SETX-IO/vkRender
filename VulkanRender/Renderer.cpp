@@ -5,6 +5,8 @@
 #include "Shader.h"
 #include "Module.h"
 
+#include "imgui.h"
+
 namespace vkRender
 {
 US_VKN;
@@ -29,6 +31,20 @@ bool Renderer::init()
     }
     swapchain_ = Swapchain::create();
     cmdBuffers_ = CommandManager::Instance()->newCmdBuffers(MAX_FRAME_IN_FLIGHT);
+
+    imgui = Gui::create(*this);
+    imgui->OnGui = []
+    {
+        ImGui::ShowDemoWindow();
+        
+        bool isOpen = true;
+        ImGui::Begin("A", &isOpen, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize);
+    
+        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate); 
+        ImGui::Text("Gpu: %s", Device::Instance()->properties.deviceName.data());
+    
+        ImGui::End();    
+    };
     
     return true;
 }
@@ -36,6 +52,8 @@ bool Renderer::init()
 void Renderer::release() const
 {
     Device::Instance()->presentQueue.waitIdle();
+
+    imgui->release();
     CommandManager::Instance()->release();
     swapchain_->release();
     program_->release();
@@ -127,6 +145,8 @@ void Renderer::draw()
         program_->use(cmdBuffers_[currentFrame], currentFrame);
         module->Renderer(cmdBuffers_[currentFrame], 1);
     }
+
+    imgui->Renderer(cmdBuffers_[currentFrame]);
     
     cmdBuffers_[currentFrame].endRenderPass();
     cmdBuffers_[currentFrame].end();
@@ -161,6 +181,13 @@ void Renderer::draw()
     
     currentFrame = (currentFrame + 1) % MAX_FRAME_IN_FLIGHT;
 }
+
+Renderer::Renderer():
+swapchain_(nullptr),
+program_(nullptr),
+vertexBuffer_(nullptr),
+imgui(nullptr)
+{}
 
 void Renderer::updateUniform() const
 {

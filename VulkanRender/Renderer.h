@@ -6,9 +6,11 @@
 #include "Program.h"
 #include "Swapchain.h"
 #include "Vertex.h"
+#include "Extensions/Gui.h"
 
 namespace vkRender
 {
+class Gui;
 class Renderer
 {
 public:
@@ -25,11 +27,15 @@ public:
 
     void update();
     void draw();
-private:
-    Swapchain *swapchain_ = nullptr;
-    Program* program_ = nullptr;
 
-    Buffer* vertexBuffer_ = nullptr;
+    Renderer();
+private:
+    Swapchain *swapchain_;
+    Program* program_;
+
+    Buffer* vertexBuffer_;
+
+    Gui* imgui;
     
     std::vector<vk::CommandBuffer> cmdBuffers_;
 
