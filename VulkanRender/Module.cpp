@@ -77,14 +77,17 @@ bool Module::init(const std::vector<Vertex>& vertices, const std::vector<uint32_
     stagingBuffer->data(vertices.data());
     vertexBuffer_ = Buffer::createDeviceLocal(BufferUsageFlagBits::eVertexBuffer | BufferUsageFlagBits::eTransferDst, stagingBuffer->size());
     stagingBuffer->copy(*vertexBuffer_);
-
-    // stagingBuffer->reSize(sizeof(indices[0]) * indices.size());
+    
     stagingBuffer = Buffer::create(BufferUsageFlagBits::eTransferSrc, sizeof(indices[0]) * indices.size());
     stagingBuffer->data(indices.data());
     indexBuffer_ = Buffer::createDeviceLocal(BufferUsageFlagBits::eIndexBuffer | BufferUsageFlagBits::eTransferDst, stagingBuffer->size());
     stagingBuffer->copy(*indexBuffer_);
     
     return true;
+}
+
+void Module::Update()
+{
 }
 
 void Module::Renderer(const CommandBuffer& cmdBuf, uint32_t instanceCount) const
@@ -106,6 +109,10 @@ Module::Module():
 vertexBuffer_(nullptr),
 indexBuffer_(nullptr),
 texture_(nullptr)
+{
+}
+
+Module::~Module()
 {
 }
 }

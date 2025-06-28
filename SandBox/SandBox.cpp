@@ -2,13 +2,11 @@
 #include <GLFW/glfw3.h>
 #include <fmt/color.h>
 
+#include "Camera.h"
 #include "Context.h"
 #include "Device.h"
 #include "Module.h"
 #include "Renderer.h"
-// #include "imgui/imgui_impl_glfw.h"
-// #include "imgui/imgui_impl_vulkan.h"
-// #include "imgui.h"
 
 GLFWwindow* window = nullptr;
 vkRender::Context *context = nullptr;
@@ -55,8 +53,8 @@ void init()
 
     glfwSetFramebufferSizeCallback(window, resetCallback);
     glfwCreateWindowSurface(context->getVkInstance(), window, nullptr, &context->getSurface());
-    glfwGetWindowFrameSize(window, nullptr, nullptr, &width, &height);
-    context->setFrameSize(width, height);
+    context->setFrameSize(640, 480);
+    vkRender::Camera::Instance()->setPos({2.f, 2.f, 2.f});
 
     const std::vector<vkRender::Vertex> vertexes =
     {
@@ -105,6 +103,8 @@ void init()
         16, 17, 18, 18, 19, 16,
         20, 21, 22, 22, 23, 20
     };
+
+    const std::vector<glm::vec3> instancePos = {{0, 0, -1}, {0, 0, 0}, {0, 0, 1}};
     
     auto module = vkRender::Module::createFormData(vertexes, indices, "E:/Documents/Project/vkRender/build/bin/Debug/Resouces/image.jpg");
     // auto module = vkRender::Module::create("E:/Documents/Project/vkRender/build/bin/Debug/Resouces/viking_room.obj",
@@ -115,14 +115,19 @@ void init()
     auto program = vkRender::Program::create("E:/Documents/Project/vkRender/build/bin/Debug/Resouces/vert.spv",
         "E:/Documents/Project/vkRender/build/bin/Debug/Resouces/frag.spv");
     
-    renderer->setProgram(program);
-    renderer->addModule(module);
+    renderer->setProgram(program)
+        .addModule(module)
+        .addVertexData(instancePos);
+    
     program->setBinding({
         {0, sizeof(vkRender::Vertex), vk::VertexInputRate::eVertex},
+        {1, sizeof(glm::vec3), vk::VertexInputRate::eInstance}
     });
     program->setAttribute({
         {0, 0, vk::Format::eR32G32B32Sfloat, 0},
-        {1, 0, vk::Format::eR32G32Sfloat, sizeof(float) * 3}
+        {1, 0, vk::Format::eR32G32Sfloat, sizeof(float) * 3},
+        
+        {2, 1, vk::Format::eR32G32B32Sfloat, 0}
     });
     program->compile(renderer->getSwapchain()->getRenderPass());
     

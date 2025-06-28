@@ -113,8 +113,6 @@ bool Device::pickPhysicalDevice()
             && !format.empty() && !presentMode.empty() && feature.samplerAnisotropy)
         {
             GPU_ = physicalDevice;
-            std::cout << physicalDevice.getProperties().deviceName << "\n";
-
             indices_ = QueueFamilyIndices::find(GPU_, surface);
             
             return true;

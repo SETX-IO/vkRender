@@ -1,8 +1,9 @@
 ﻿#include "Renderer.h"
 
+#include "Camera.h"
 #include "CommandManager.h"
 #include "Device.h"
-#include "Shader.h"
+#include "Context.h"
 #include "Module.h"
 
 namespace vkRender
@@ -39,6 +40,7 @@ void Renderer::release() const
     CommandManager::Instance()->release();
     swapchain_->release();
     program_->release();
+    instanceBuffer_->release();
     for (auto module : modules_)
     {
         module->destroy();
@@ -46,13 +48,13 @@ void Renderer::release() const
     }
 }
 
-Renderer& Renderer::addVertexData(const std::vector<Vertex>& vertices)
+Renderer& Renderer::addVertexData(const std::vector<glm::vec3>& vertices)
 {
     auto stagingBuffer = Buffer::create(BufferUsageFlagBits::eTransferSrc, sizeof(vertices[0]) * vertices.size());
     stagingBuffer->data(vertices.data());
     
-    vertexBuffer_ = Buffer::createDeviceLocal(BufferUsageFlagBits::eVertexBuffer | BufferUsageFlagBits::eTransferDst, stagingBuffer->size());
-    stagingBuffer->copy(*vertexBuffer_);
+    instanceBuffer_ = Buffer::createDeviceLocal(BufferUsageFlagBits::eVertexBuffer | BufferUsageFlagBits::eTransferDst, stagingBuffer->size());
+    stagingBuffer->copy(*instanceBuffer_);
 
     return *this;
 }
@@ -75,6 +77,10 @@ Renderer& Renderer::setProgram(Program* program)
 
 void Renderer::update()
 {
+    for (auto module : modules_)
+    {
+        module->Update();
+    }
     updateUniform();
 }
 
@@ -93,14 +99,13 @@ void Renderer::draw()
     }
     else if (res.result != Result::eSuccess && res.result != Result::eSuboptimalKHR)
     {
-        std::cout << "?" << "\t";
+        std::cout << "[Vulkan] GetImageIndex Error" << "\n";
         return;
     }
     
     uint32_t imageIndex = res.value;
     cmdBuffers_[currentFrame].reset();
     device.resetFences(inFlightFences[currentFrame]);
-    
     
     constexpr CommandBufferBeginInfo beginInfo;
 
@@ -109,8 +114,9 @@ void Renderer::draw()
     clearValues[1].setDepthStencil({1.f, 0});
 
     RenderPassBeginInfo passBeginInfo = swapchain_->newRenderPassBeginInfo(currentFrame);
-    const Viewport viewport{0, 0, frameSize.x, frameSize.y, 0.f, 1.f};
-    const Rect2D scissor{{0, 0}, {static_cast<uint32_t>(frameSize.x), static_cast<uint32_t>(frameSize.y)}};
+    auto frameSize = Context::getInstance()->getFrameSize();
+    const Viewport viewport{0, 0, static_cast<float>(frameSize.width), static_cast<float>(frameSize.height), 0.f, 1.f};
+    const Rect2D scissor{0, frameSize};
     
     passBeginInfo
         .setClearValues(clearValues)
@@ -124,8 +130,10 @@ void Renderer::draw()
 
     for (auto module : modules_)
     {
+        DeviceSize offset = 0;
         program_->use(cmdBuffers_[currentFrame], currentFrame);
-        module->Renderer(cmdBuffers_[currentFrame], 1);
+        cmdBuffers_[currentFrame].bindVertexBuffers(1, instanceBuffer_->getBuffer(), offset);
+        module->Renderer(cmdBuffers_[currentFrame], 3);
     }
     
     cmdBuffers_[currentFrame].endRenderPass();
@@ -155,25 +163,32 @@ void Renderer::draw()
     }
     else if (result != Result::eSuccess)
     {
-        std::cout << "???" << "\t";
+        std::cout << "[Vulkan] Present Error" << "\n";
         return;
     }
     
     currentFrame = (currentFrame + 1) % MAX_FRAME_IN_FLIGHT;
 }
 
+Renderer::Renderer():
+swapchain_(nullptr),
+program_(nullptr),
+instanceBuffer_(nullptr)
+{
+}
+
 void Renderer::updateUniform() const
 {
     static auto startTime = std::chrono::high_resolution_clock::now();
-
     auto currentTime = std::chrono::high_resolution_clock::now();
+    
     float time = std::chrono::duration<float>(currentTime - startTime).count();
 
+    auto camera = Camera::Instance();
     UniformObj obj;
     obj.module = glm::rotate(glm::mat4(1.f), time * glm::radians(90.f), glm::vec3(0.f, 0.f, 1.f));
-    obj.view = glm::lookAt(glm::vec3(2.f, 2.f, 2.f), glm::vec3(0), glm::vec3(0.f, 0.f, 1.f));
-    obj.proj = glm::perspective(glm::radians(45.f), frameSize.x / frameSize.y, 0.1f, 10.f);
-    obj.proj[1][1] *= -1;
+    obj.view = camera->getView();
+    obj.proj = camera->getProj();
 
     program_->setUniform(currentFrame, &obj);
 }

@@ -1,11 +1,8 @@
 ﻿#pragma once
-
 #include "vkRender.h"
-#include "Context.h"
 #include "Module.h"
 #include "Program.h"
 #include "Swapchain.h"
-#include "Vertex.h"
 
 namespace vkRender
 {
@@ -17,7 +14,7 @@ public:
     bool init();
     void release() const;
     
-    Renderer& addVertexData(const std::vector<Vertex>& vertices);
+    Renderer& addVertexData(const std::vector<glm::vec3>& vertices);
     Renderer& addModule(Module* module);
 
     Renderer& setProgram(Program* program);
@@ -25,11 +22,13 @@ public:
 
     void update();
     void draw();
-private:
-    Swapchain *swapchain_ = nullptr;
-    Program* program_ = nullptr;
 
-    Buffer* vertexBuffer_ = nullptr;
+    Renderer();
+private:
+    Swapchain *swapchain_;
+    Program* program_;
+
+    Buffer* instanceBuffer_;
     
     std::vector<vk::CommandBuffer> cmdBuffers_;
 
@@ -40,8 +39,6 @@ private:
     std::vector<Module *> modules_;
 
     int currentFrame = 0;
-
-    glm::vec2 frameSize = glm::vec2(640, 480);
     
     void updateUniform() const;
 };

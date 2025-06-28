@@ -7,10 +7,31 @@
 
 可能内置一个自己写的DeviceMemory分配器...
 
+
+补充跟多的api供以使用
+
 # 计划
-- [x] Shader Program
+- 基础
 - [x] Buffer
-- [ ] 加入无需手动释放的材质类 (Texture)
+- [x] Shader Program
+- [x] 加入无需手动释放的材质类 (Texture)
+- [ ] 模型加载
+
+
+- Vulkan
+- [x] 实例化渲染
+
+
+- DeviceMemory分配器
+
+
+# 构建
+## Windows
+```
+git close https://github.com/SETX-IO/vkRender.git
+
+cmake -B build
+```
 
 # 库
 [GLFW](https://github.com/glfw/glfw) 窗口系统

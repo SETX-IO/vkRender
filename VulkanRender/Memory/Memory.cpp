@@ -60,9 +60,10 @@ DeviceMemory Memory::AllocateMemory(MemoryPropertyFlags property, const MemoryRe
         .setMemoryTypeIndex(typeIndex);
 
     auto result = Device::Instance()->getDevice().allocateMemory(allocateInfo);
-    // memoryCache_[property] = result;
-    memories_[bufferCount++] = result;
 
+    memories_.push_back(result);
+    ++bufferCount;
+    
     return result;
 }
 

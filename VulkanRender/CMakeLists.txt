@@ -8,7 +8,9 @@ set(RENDER_HEADER
 	VulkanRender/Shader.h
 	VulkanRender/Program.h
 	VulkanRender/Texture.h
+	VulkanRender/Camera.h
 	VulkanRender/Module.h
+	VulkanRender/Drawable/Drawable.h
 	VulkanRender/Memory/Memory.h
 	VulkanRender/Memory/DebugUtil.h
 	VulkanRender/Logger/Logger.h
@@ -28,6 +30,7 @@ set(RENDER_SRC
 	VulkanRender/Program.cpp
 	VulkanRender/Texture.cpp
 	VulkanRender/Module.cpp
+	VulkanRender/Camera.cpp
 	VulkanRender/Memory/Memory.cpp
 	VulkanRender/Memory/DebugUtil.cpp
 	VulkanRender/Logger/Logger.cpp
