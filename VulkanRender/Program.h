@@ -1,7 +1,5 @@
 ﻿#pragma once
 
-#include "Buffer.h"
-#include "Shader.h"
 #include "vkRender.h"
 
 namespace vkRender
@@ -11,6 +9,9 @@ struct VertexInputInfo
     std::vector<vk::VertexInputBindingDescription> binding;
     std::vector<vk::VertexInputAttributeDescription> attribute;
 };
+
+class Buffer;
+class Shader;
 
 class Program
 {

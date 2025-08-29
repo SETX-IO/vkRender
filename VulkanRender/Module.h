@@ -1,12 +1,13 @@
 ﻿#pragma once
-#include "Buffer.h"
-#include "Texture.h"
 #include "Vertex.h"
 #include "vkRender.h"
 #include "Drawable/Drawable.h"
 
 namespace vkRender
 {
+class Buffer;
+class Texture;
+
 class Module : public Drawable
 {
 public:

@@ -3,7 +3,7 @@
 #include "Context.h"
 #include "Device.h"
 #include "Shader.h"
-#include "Vertex.h"
+#include "Buffer.h"
 
 namespace vkRender
 {

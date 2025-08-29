@@ -1,6 +1,8 @@
 ﻿#define TINYOBJLOADER_IMPLEMENTATION
 
 #include "Module.h"
+#include "Buffer.h"
+#include "Texture.h"
 #include <tiny_obj_loader.h>
 
 namespace vkRender

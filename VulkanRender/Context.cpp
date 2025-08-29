@@ -3,6 +3,7 @@
 #include "CommandManager.h"
 #include "Device.h"
 #include "Memory/Memory.h"
+#include "Memory/DebugUtil.h"
 
 namespace vkRender
 {

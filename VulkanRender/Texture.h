@@ -1,7 +1,5 @@
 ﻿#pragma once
 #include "vkRender.h"
-#include "Buffer.h"
-#include "Release.h"
 
 namespace vkRender
 {

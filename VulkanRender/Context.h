@@ -1,13 +1,13 @@
 ﻿#pragma once
 #include "Release.h"
-#include "glm/glm.hpp"
 
 #include "vkRender.h"
-#include "Memory/DebugUtil.h"
 
 namespace vkRender
 {
 static auto empty = std::vector<const char*>();
+
+class DebugUtil;
 
 class Context final
 {

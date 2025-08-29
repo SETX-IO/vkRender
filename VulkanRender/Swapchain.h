@@ -2,8 +2,6 @@
 
 #include <vkRender.h>
 
-#include "Texture.h"
-
 namespace vkRender
 {
 struct SwapchainInfo
@@ -14,6 +12,8 @@ struct SwapchainInfo
     vk::PresentModeKHR presentMode;
     vk::SurfaceTransformFlagBitsKHR transform;
 };
+
+class Texture;
 
 class Swapchain
 {

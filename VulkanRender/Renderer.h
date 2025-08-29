@@ -1,11 +1,13 @@
 ﻿#pragma once
 #include "vkRender.h"
-#include "Module.h"
-#include "Program.h"
-#include "Swapchain.h"
 
 namespace vkRender
 {
+class Buffer;
+class Module;
+class Program;
+class Swapchain;
+
 class Renderer
 {
 public:

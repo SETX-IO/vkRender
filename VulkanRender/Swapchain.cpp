@@ -2,6 +2,7 @@
 
 #include "Context.h"
 #include "Device.h"
+#include "Texture.h"
 #include "Memory/Memory.h"
 
 namespace vkRender
