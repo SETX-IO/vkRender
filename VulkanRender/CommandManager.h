@@ -21,6 +21,6 @@ private:
     vk::CommandPool pool_;
     std::stack<vk::CommandBuffer> cmdBufferStack;
     
-    static CommandManager *s_instance;
+    static std::unique_ptr<CommandManager> s_instance;
 };
 }

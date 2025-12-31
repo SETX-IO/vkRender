@@ -56,7 +56,7 @@ Renderer& Renderer::addVertexData(const std::vector<glm::vec3>& vertices)
     auto stagingBuffer = Buffer::create(BufferUsageFlagBits::eTransferSrc, sizeof(vertices[0]) * vertices.size());
     stagingBuffer->data(vertices.data());
     
-    instanceBuffer_ = Buffer::createDeviceLocal(BufferUsageFlagBits::eVertexBuffer | BufferUsageFlagBits::eTransferDst, stagingBuffer->size());
+    instanceBuffer_ = Buffer::createDeviceLocal(BufferUsageFlagBits::eVertexBuffer, stagingBuffer->size());
     stagingBuffer->copy(*instanceBuffer_);
 
     return *this;
@@ -78,7 +78,7 @@ Renderer& Renderer::setProgram(Program* program)
     return *this;
 }
 
-void Renderer::update()
+void Renderer::update() const
 {
     for (auto module : modules_)
     {
@@ -90,10 +90,11 @@ void Renderer::update()
 void Renderer::draw()
 {
     const auto device = Device::Instance()->getDevice();
-
-    device.waitForFences(inFlightFences[currentFrame], true, std::numeric_limits<uint64_t>::max());
+    constexpr uint32_t timeout = std::numeric_limits<uint32_t>::max();
     
-    const auto res =  device.acquireNextImageKHR(swapchain_->get(), std::numeric_limits<uint32_t>::max(), imageAvailableSemaphores[currentFrame], nullptr);
+    device.waitForFences(inFlightFences[currentFrame], true, timeout);
+    
+    const auto res =  device.acquireNextImageKHR(swapchain_->get(), timeout, imageAvailableSemaphores[currentFrame], nullptr);
 
     if (res.result == Result::eErrorOutOfDateKHR)
     {
@@ -105,8 +106,8 @@ void Renderer::draw()
         std::cout << "[Vulkan] GetImageIndex Error" << "\n";
         return;
     }
-    
-    uint32_t imageIndex = res.value;
+
+    const uint32_t imageIndex = res.value;
     cmdBuffers_[currentFrame].reset();
     device.resetFences(inFlightFences[currentFrame]);
     
@@ -135,6 +136,7 @@ void Renderer::draw()
     {
         DeviceSize offset = 0;
         program_->use(cmdBuffers_[currentFrame], currentFrame);
+        // TODO: 添加单实例情况
         cmdBuffers_[currentFrame].bindVertexBuffers(1, instanceBuffer_->getBuffer(), offset);
         module->Renderer(cmdBuffers_[currentFrame], 3);
     }

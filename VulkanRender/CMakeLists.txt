@@ -10,10 +10,13 @@ set(RENDER_HEADER
 	VulkanRender/Texture.h
 	VulkanRender/Camera.h
 	VulkanRender/Module.h
+	VulkanRender/QueueFamilyIndices.h
 	VulkanRender/Drawable/Drawable.h
 	VulkanRender/Memory/Memory.h
 	VulkanRender/Memory/DebugUtil.h
 	VulkanRender/Logger/Logger.h
+	VulkanRender/Platform/Window.h
+	VulkanRender/Platform/Application.h
 	VulkanRender/Vertex.h
 	VulkanRender/vkRender.h
 	VulkanRender/Release.h
@@ -31,7 +34,10 @@ set(RENDER_SRC
 	VulkanRender/Texture.cpp
 	VulkanRender/Module.cpp
 	VulkanRender/Camera.cpp
+	VulkanRender/QueueFamilyIndices.cpp
 	VulkanRender/Memory/Memory.cpp
 	VulkanRender/Memory/DebugUtil.cpp
 	VulkanRender/Logger/Logger.cpp
+	VulkanRender/Platform/Window.cpp
+	VulkanRender/Platform/Application.cpp
 )

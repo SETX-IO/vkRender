@@ -77,12 +77,16 @@ bool Module::init(const std::vector<Vertex>& vertices, const std::vector<uint32_
     
     auto stagingBuffer = Buffer::create(BufferUsageFlagBits::eTransferSrc, sizeof(vertices[0]) * vertices.size());
     stagingBuffer->data(vertices.data());
-    vertexBuffer_ = Buffer::createDeviceLocal(BufferUsageFlagBits::eVertexBuffer | BufferUsageFlagBits::eTransferDst, stagingBuffer->size());
+    vertexBuffer_ = Buffer::createDeviceLocal(BufferUsageFlagBits::eVertexBuffer, stagingBuffer->size());
     stagingBuffer->copy(*vertexBuffer_);
-    
+
+    if (indices.empty())
+    {
+        return true;
+    }
     stagingBuffer = Buffer::create(BufferUsageFlagBits::eTransferSrc, sizeof(indices[0]) * indices.size());
     stagingBuffer->data(indices.data());
-    indexBuffer_ = Buffer::createDeviceLocal(BufferUsageFlagBits::eIndexBuffer | BufferUsageFlagBits::eTransferDst, stagingBuffer->size());
+    indexBuffer_ = Buffer::createDeviceLocal(BufferUsageFlagBits::eIndexBuffer, stagingBuffer->size());
     stagingBuffer->copy(*indexBuffer_);
     
     return true;

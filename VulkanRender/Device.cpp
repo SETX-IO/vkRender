@@ -1,6 +1,7 @@
 #include "Device.h"
 
 #include "Context.h"
+#include "vkRender.h"
 
 namespace vkRender
 {

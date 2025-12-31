@@ -22,7 +22,7 @@ public:
     Renderer& setProgram(Program* program);
     Swapchain* getSwapchain() const {return swapchain_;}
 
-    void update();
+    void update() const;
     void draw();
 
     Renderer();

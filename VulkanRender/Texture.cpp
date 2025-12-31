@@ -108,6 +108,11 @@ DescriptorImageInfo Texture::newDescriptor() const
     return imageInfo;
 }
 
+Format Texture::getFormat() const
+{
+    return format_;
+}
+
 void Texture::transitionLayout(Format format, ImageLayout old, ImageLayout layout) const
 {
     PipelineStageFlags sourceStage;
@@ -244,6 +249,11 @@ void Texture::createSampler()
         .setMipmapMode(SamplerMipmapMode::eLinear);
 
     textureSampler_ = Device::Instance()->getDevice().createSampler(createInfo);
+}
+
+const ImageView& Texture::getView() const
+{
+    return textureView_;
 }
 
 void Texture::release() const

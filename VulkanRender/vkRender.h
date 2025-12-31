@@ -19,7 +19,6 @@
 
 namespace vkRender {}
 
-typedef unsigned char uByte;
 struct UniformObj
 {
     glm::mat4 module;

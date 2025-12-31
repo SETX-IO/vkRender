@@ -1,5 +1,6 @@
 ﻿#include "Program.h"
 
+#include "AttributeInfo.h"
 #include "Context.h"
 #include "Device.h"
 #include "Shader.h"
@@ -69,10 +70,36 @@ void Program::setBinding(const std::vector<VertexInputBindingDescription>& bindi
     vertexInput_.binding = binding;
 }
 
-void Program::setAttribute(const std::vector<VertexInputAttributeDescription>& attribute)
+// TODO: 新建类型又传参决定 Attribute 的内容, 并更名为AddAttribute
+// void Program::setAttribute(const std::vector<VertexInputAttributeDescription>& attribute)
+// {
+//     vertexInput_.attribute = attribute;
+// }
+
+Program& Program::addAttribute(const AttributeInfo attribute)
 {
-    vertexInput_.attribute = attribute;
+    static unsigned int offset = 0;
+    static unsigned int location = 0;
+    static unsigned int binding = 0;
+
+    if (binding != attribute.bind)
+    {
+        offset = 0;
+    }
+    if (location < attribute.location)
+    {
+        location = 0;
+    }
+    
+    vertexInput_.attribute.emplace_back(location, attribute.bind, attribute.format, offset);
+
+    offset += attribute.size;
+    binding = attribute.bind;
+    location++;
+    
+    return *this;
 }
+
 
 void Program::use(const CommandBuffer& cmdBuf, int currentFrame) const
 {
@@ -157,10 +184,7 @@ void Program::createPipeline(const RenderPass &renderPass, const VertexInputInfo
     PipelineDynamicStateCreateInfo dynamicStateCreateInfo;
     dynamicStateCreateInfo.setDynamicStates(dynamicStates);
     createInfo.setPDynamicState(&dynamicStateCreateInfo);
-
     
-    // auto attribute = Vertex::getAttribute();
-    // auto bindings = Vertex::getBinding();
     // 顶点输入
     PipelineVertexInputStateCreateInfo vertexInputInfo;
     vertexInputInfo

@@ -1,4 +1,5 @@
 ﻿#pragma once
+
 #include "vkRender.h"
 
 namespace vkRender
@@ -13,8 +14,8 @@ public:
     bool init();
 
     vk::DescriptorImageInfo newDescriptor() const;
-    vk::Format getFormat() const {return format_;}
-    const vk::ImageView &getView() const {return textureView_;}
+    vk::Format getFormat() const;
+    const vk::ImageView &getView() const;
     
     void release() const;
 
@@ -26,7 +27,7 @@ private:
     int height_ = 0;
     int TexChannels = 0;
     
-    uByte *data_ = nullptr;
+    unsigned char *data_ = nullptr;
 
     uint32_t mipLevels_;
     

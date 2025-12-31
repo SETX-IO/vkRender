@@ -8,17 +8,21 @@
 namespace vkRender
 {
 US_VKN;
-Context* Context::s_instance = nullptr;
+std::unique_ptr<Context> Context::s_instance = nullptr;
 
-Context* Context::getInstance(const std::vector<const char*>& extensions)
+void Context::Init(const std::vector<const char*>& extensions)
 {
     if (!s_instance)
     {
-        s_instance = new(std::nothrow) Context();
-        s_instance->init(extensions);
+        s_instance = std::make_unique<Context>();
+        assert(s_instance->init(extensions), "Instacne Init Fialy.");
     }
+}
 
-    return s_instance;
+Context* Context::getInstance()
+{
+    assert(s_instance, "Instance is nullptr.");
+    return s_instance.get();
 }
 
 void Context::addReleaseObj(Release* obj)
@@ -30,15 +34,10 @@ void Context::addReleaseObj(Release* obj)
     releasePool_.push_back(obj);
 }
 
-Context::~Context()
-{
-    s_instance = nullptr;
-}
-
 bool Context::init(const std::vector<const char*>& extensions)
 {
     createVkInstance(extensions);
-    debugUtil_ = DebugUtil::create(vkInstance_);
+    debugUtil_ = std::make_unique<DebugUtil>(*DebugUtil::create(vkInstance_));
     
     return true;
 }

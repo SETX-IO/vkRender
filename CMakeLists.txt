@@ -13,10 +13,15 @@ set(FMT_INSTALL OFF)
 
 find_package(Vulkan REQUIRED)
 
-list(APPEND RENDER_SRC ${RENDER_HEADER} ${EXTENSION} ${RES_FOLDER}/DefultPipeLine.vert ${RES_FOLDER}/DefultPipeLine.frag)
+list(APPEND RENDER_SRC ${RENDER_HEADER} ${EXTENSION} 
+    ${RES_FOLDER}/DefultPipeLine.vert ${RES_FOLDER}/DefultPipeLine.frag
+     ${RES_FOLDER}/FrameBuffer.vert ${RES_FOLDER}/FrameBuffer.frag)
 add_subdirectory(library)
 
 find_program(GLSLC_PROFRAM glslc REQUIRE)
+
+execute_process(COMMAND ${GLSLC_PROFRAM} ${RES_FOLDER}/FrameBuffer.vert -o ${RES_FOLDER}/frameVert.spv)
+execute_process(COMMAND ${GLSLC_PROFRAM} ${RES_FOLDER}/FrameBuffer.frag -o ${RES_FOLDER}/frameFrag.spv)
 
 execute_process(COMMAND ${GLSLC_PROFRAM} ${RES_FOLDER}/DefultPipeLine.vert -o ${RES_FOLDER}/vert.spv)
 execute_process(COMMAND ${GLSLC_PROFRAM} ${RES_FOLDER}/DefultPipeLine.frag -o ${RES_FOLDER}/frag.spv)
@@ -24,7 +29,7 @@ execute_process(COMMAND ${GLSLC_PROFRAM} ${RES_FOLDER}/DefultPipeLine.frag -o ${
 add_library(${lib_name} STATIC ${RENDER_SRC})
 target_include_directories(${lib_name} PUBLIC VulkanRender extension)
 # target_precompile_headers(${lib_name} PRIVATE VulkanRender/vkRender.h)
-target_link_libraries(${lib_name} PUBLIC Vulkan::Vulkan fmt freetype imgui)
+target_link_libraries(${lib_name} PUBLIC glfw Vulkan::Vulkan fmt freetype imgui)
 target_compile_features(${lib_name} PUBLIC cxx_std_17)
 
 add_subdirectory(SandBox)

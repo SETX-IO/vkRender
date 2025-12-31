@@ -7,7 +7,7 @@ namespace vkRender
 US_VKN;
 uint64_t Memory::memoryOffset = 0;
 uint16_t Memory::bufferCount = 0;
-std::vector<DeviceMemory> Memory::memories_ = std::vector<DeviceMemory>(10);
+std::vector<DeviceMemory> Memory::memories_ = std::vector<DeviceMemory>(20);
 std::map<MemoryPropertyFlags, DeviceMemory> Memory::memoryCache_ = {};
 
 void* Memory::Binding(const Buffer& buffer, MemoryPropertyFlags property)

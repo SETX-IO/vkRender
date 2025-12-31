@@ -1,22 +1,23 @@
 ﻿#pragma once
 #include "Release.h"
 
-#include "vkRender.h"
+#include "vulkan/vulkan.hpp"
 
 namespace vkRender
 {
-static auto empty = std::vector<const char*>();
-
 class DebugUtil;
 
 class Context final
 {
 public:
-    // get Context Instance. parameters use on initialize
-    static Context* getInstance(const std::vector<const char*> &extensions = empty);
+    
+    static void Init(const std::vector<const char*> &extensions);
+    
+    // get Context Instance.
+    static Context* getInstance();
     
     // get Vulkan instance
-    vk::Instance & getVkInstance() {return vkInstance_;}
+    vk::Instance &getVkInstance() {return vkInstance_;}
     VkSurfaceKHR &getSurface() {return surface_;}
 
     void addReleaseObj(Release *obj);
@@ -27,18 +28,25 @@ public:
     void release() const;
 
     Context() = default;
-    ~Context();
-private:
+    ~Context() = default;
+
+    Context(const Context&) = delete;
+    Context& operator=(const Context&) = delete;
+    Context(Context&&) = delete;
+    Context& operator=(const Context&&) = delete;
+    
+private:    
     vk::Instance vkInstance_;
     VkSurfaceKHR surface_ = {};
 
     std::vector<Release *> releasePool_;
 
-    DebugUtil *debugUtil_ = nullptr;
+    std::unique_ptr<DebugUtil> debugUtil_;
 
     vk::Extent2D frameSize_ = {};
     
-    static Context* s_instance;
+    static std::unique_ptr<Context> s_instance;
+    // static Context* s_instance;
     
     void createVkInstance(const std::vector<const char*>& extensions);
 };

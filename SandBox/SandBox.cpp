@@ -1,14 +1,16 @@
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
 #include <fmt/color.h>
 
+#include "AttributeInfo.h"
 #include "Camera.h"
 #include "Context.h"
-#include "Device.h"
 #include "Module.h"
+#include "Program.h"
+#include "Swapchain.h"
+#include "Texture.h"
 #include "Renderer.h"
+#include "Platform/Application.h"
+#include "Platform/Window.h"
 
-GLFWwindow* window = nullptr;
 vkRender::Context *context = nullptr;
 vkRender::Renderer *renderer = nullptr;
 
@@ -18,41 +20,31 @@ void resetCallback(GLFWwindow*, int, int);
 
 int main(int argc, char* argv[])
 {
-    glfwInit();
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+    Application* app = new Application(true);
+    Window* window_ = new Window(640, 480, "Vulkan Render");
+    
+    vkRender::Context::Init(app->getInstanceExtensions());
+     
+    context = vkRender::Context::getInstance();
 
-    window = glfwCreateWindow(640, 480, "Vulkan Render", nullptr, nullptr);
+    window_->setWindowSetSizeCallBack(resetCallback);
+    window_->getVkSurface(context->getVkInstance(), &context->getSurface());
+        
+    // std::cout << argv[0] << "\n";
     init();
-
-    while (!glfwWindowShouldClose(window))
-    {
-        glfwPollEvents();
-        mainLoop();
-    }
-
-    glfwDestroyWindow(window);
-    glfwTerminate();
-
-
+    
+    app->setLoopCullBack(mainLoop);
+    
+    app->run(window_);
+    
     renderer->release();
     context->release();
+    
     return 0;
 }
 
 void init()
 {
-    int width = 0;
-    int height = 0;
-    uint32_t count;
-    const char** extensionArray = glfwGetRequiredInstanceExtensions(&count);
-    std::vector extensions(extensionArray, extensionArray + count);
-    extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-    
-    context = vkRender::Context::getInstance(extensions);
-
-    glfwSetFramebufferSizeCallback(window, resetCallback);
-    glfwCreateWindowSurface(context->getVkInstance(), window, nullptr, &context->getSurface());
     context->setFrameSize(640, 480);
     vkRender::Camera::Instance()->setPos({2.f, 2.f, 2.f});
 
@@ -104,48 +96,43 @@ void init()
         20, 21, 22, 22, 23, 20
     };
 
+    const std::string resource_dir("E:/Documents/Project/vkRender/build/bin/Debug/Resouces/");
     const std::vector<glm::vec3> instancePos = {{0, 0, -1}, {0, 0, 0}, {0, 0, 1}};
     
-    auto module = vkRender::Module::createFormData(vertexes, indices, "E:/Documents/Project/vkRender/build/bin/Debug/Resouces/image.jpg");
-    // auto module = vkRender::Module::create("E:/Documents/Project/vkRender/build/bin/Debug/Resouces/viking_room.obj",
+    auto module = vkRender::Module::createFormData(vertexes, indices, resource_dir.substr().append("image.jpg"));
+    // auto module2 = vkRender::Module::createFormData(frame, {}, "");
+    // auto module2 = vkRender::Module::create("E:/Documents/Project/vkRender/build/bin/Debug/Resouces/viking_room.obj",
     //     "E:/Documents/Project/vkRender/build/bin/Debug/Resouces/viking_room.png");
     
     renderer = vkRender::Renderer::create();
     
-    auto program = vkRender::Program::create("E:/Documents/Project/vkRender/build/bin/Debug/Resouces/vert.spv",
-        "E:/Documents/Project/vkRender/build/bin/Debug/Resouces/frag.spv");
-    
-    renderer->setProgram(program)
-        .addModule(module)
-        .addVertexData(instancePos);
+    auto program = vkRender::Program::create(resource_dir.substr().append("vert.spv"), resource_dir.substr().append("frag.spv"));
     
     program->setBinding({
         {0, sizeof(vkRender::Vertex), vk::VertexInputRate::eVertex},
         {1, sizeof(glm::vec3), vk::VertexInputRate::eInstance}
     });
-    program->setAttribute({
-        {0, 0, vk::Format::eR32G32B32Sfloat, 0},
-        {1, 0, vk::Format::eR32G32Sfloat, sizeof(float) * 3},
-        
-        {2, 1, vk::Format::eR32G32B32Sfloat, 0}
-    });
-    program->compile(renderer->getSwapchain()->getRenderPass());
+    
+    program->addAttribute({vk::Format::eR32G32B32Sfloat, sizeof(float) * 3})
+        .addAttribute({vk::Format::eR32G32Sfloat, sizeof(float) * 2})
+        .addAttribute({1, vk::Format::eR32G32B32Sfloat, sizeof(float) * 3})
+        .compile(renderer->getSwapchain()->getRenderPass());
     
     program->addImageInfo(module->getTexture().newDescriptor());
     program->setDescriptor({
         vk::DescriptorType::eUniformBuffer,
         vk::DescriptorType::eCombinedImageSampler,
     });
-
-    // vkRender::Logger log;
-    //
-    // log.log("Hello World");
+    
+    renderer->setProgram(program)
+        .addModule(module)
+        .addVertexData(instancePos);
 }
 
 void resetCallback(GLFWwindow* window, int wight, int height)
 {
     fmt::print(fg(fmt::color::white), "[glfw] window Size Width: {} Height: {}\n", wight, height);
-    context->setFrameSize(wight, height);
+    // context->setFrameSize(wight, height);
 }
 
 void mainLoop()

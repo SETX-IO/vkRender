@@ -3,16 +3,16 @@
 namespace vkRender
 {
 US_VKN;
-CommandManager* CommandManager::s_instance = nullptr;
+std::unique_ptr<CommandManager> CommandManager::s_instance = nullptr;
 
 CommandManager* CommandManager::Instance()
 {
     if (!s_instance)
     {
-        s_instance = new (std::nothrow) CommandManager();
+        s_instance = std::make_unique<CommandManager>();;
         s_instance->init();
     }
-    return s_instance;
+    return s_instance.get();
 }
 
 bool CommandManager::init()
@@ -30,8 +30,6 @@ bool CommandManager::init()
 void CommandManager::release() const
 {
     Device::Instance()->getDevice().destroyCommandPool(pool_);
-    
-    s_instance = nullptr;
 }
 
 std::vector<CommandBuffer> CommandManager::newCmdBuffers(uint32_t count)

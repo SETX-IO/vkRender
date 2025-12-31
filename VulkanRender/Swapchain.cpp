@@ -173,6 +173,9 @@ void Swapchain::createFramebuffer()
 {
     auto device = Device::Instance();
 
+    // 获取屏幕交换图像 已分配内存
+    // TODO :替换成自购建的,并实现屏幕后处理
+    // 需要考虑完成分配自动内存
     std::vector images = device->getDevice().getSwapchainImagesKHR(swapchain_);
     
     for (int i = 0; i < images.size(); ++i)

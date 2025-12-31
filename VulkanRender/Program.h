@@ -12,6 +12,7 @@ struct VertexInputInfo
 
 class Buffer;
 class Shader;
+struct AttributeInfo;
 
 class Program
 {
@@ -25,7 +26,8 @@ public:
     void setUniform(int currentFrame, const void* data);
     void setDescriptor(const std::vector<vk::DescriptorType> &bindings);
     void setBinding(const std::vector<vk::VertexInputBindingDescription>& binding);
-    void setAttribute(const std::vector<vk::VertexInputAttributeDescription>& attribute);
+    // void setAttribute(const std::vector<vk::VertexInputAttributeDescription>& attribute);
+    Program &addAttribute(AttributeInfo attribute);
     void use(const vk::CommandBuffer &cmdBuf, int currentFrame) const;
     void compile(const vk::RenderPass &renderPass);
     

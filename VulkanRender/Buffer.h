@@ -31,8 +31,6 @@ private:
     void createBuffer(vk::BufferUsageFlags bufferType);
 
     vk::DeviceSize size_;
-    vk::BufferUsageFlags type_;
-    vk::MemoryPropertyFlags property_;
     
     vk::Buffer buffer_;
     // vk::DeviceMemory memory_;

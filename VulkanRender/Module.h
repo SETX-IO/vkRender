@@ -7,7 +7,8 @@ namespace vkRender
 {
 class Buffer;
 class Texture;
-
+    
+    // Todo: 添加无索引下从数据创建模型
 class Module : public Drawable
 {
 public:
@@ -26,6 +27,9 @@ public:
     
     Module();
     virtual ~Module() override;
+    
+public:
+    glm::vec3 position;
     
 private:
     uint32_t indexCount = 0;

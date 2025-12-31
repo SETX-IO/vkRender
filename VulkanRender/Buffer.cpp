@@ -8,11 +8,13 @@
 namespace vkRender
 {
 US_VKN;
-
-Buffer* Buffer::createDeviceLocal(BufferUsageFlags bufferType, DeviceSize size)
+    
+Buffer* Buffer::createDeviceLocal(BufferUsageFlags bufferType,  DeviceSize elementSize)
 {
-    Buffer *buffer = new (std::nothrow) Buffer(size);
+    Buffer *buffer = new (std::nothrow) Buffer(elementSize);
     MemoryPropertyFlags property = MemoryPropertyFlagBits::eDeviceLocal;
+    
+    bufferType |= BufferUsageFlagBits::eTransferDst;
     
     if (buffer && buffer->init(bufferType, property))
     {
@@ -36,8 +38,6 @@ Buffer* Buffer::create(BufferUsageFlags bufferType, DeviceSize size)
 bool Buffer::init(BufferUsageFlags bufferType, MemoryPropertyFlags property)
 {
     createBuffer(bufferType);
-    type_ = bufferType;
-    property_ = property;
     data_ = Memory::Binding(buffer_, property);
     
     return true;
@@ -64,7 +64,7 @@ void Buffer::copy(const Buffer& dstBuffer) const
     bufferCopy
         .setSrcOffset(0)
         .setDstOffset(0)
-        .setSize(dstBuffer.size());
+        .setSize(dstBuffer.size_);
     
     CommandManager::Instance()->record([&](const CommandBuffer &cmd)
     {
@@ -73,13 +73,6 @@ void Buffer::copy(const Buffer& dstBuffer) const
 
     release();
 }
-
-// void Buffer::reSize(DeviceSize size)
-// {
-//     release();
-//     size_ = size;
-//     init(type_, property_);
-// }
 
 void Buffer::data(const void* data) const
 {
