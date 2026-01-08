@@ -1,6 +1,8 @@
 ﻿#include "Camera.h"
 
 #include "Context.h"
+#include "Platform/Application.h"
+#include "Platform/Window.h"
 
 namespace vkRender
 {
@@ -35,7 +37,9 @@ fovy_(45.f)
 
 void Camera::update(glm::vec3 pos, float fovy)
 {
-    auto frameSize = Context::getInstance()->getFrameSize();
+    vk::Extent2D frameSize{};
+    Application::Current().getWindow().getSize(&frameSize.width, &frameSize.height);
+    
     view_ = glm::lookAt(pos, glm::vec3(0), glm::vec3(0.f, 0.f, 1.f));
     proj_ = glm::perspective(glm::radians(fovy), static_cast<float>(frameSize.width) / frameSize.height, 0.1f, 10.f);
     proj_[1][1] *= -1;

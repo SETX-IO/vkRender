@@ -8,6 +8,8 @@
 #include "Program.h"
 #include "Swapchain.h"
 #include "CommandManager.h"
+#include "Platform/Application.h"
+#include "Platform/Window.h"
 
 namespace vkRender
 {
@@ -101,7 +103,7 @@ void Renderer::draw()
         swapchain_->reCreate();
         return;
     }
-    else if (res.result != Result::eSuccess && res.result != Result::eSuboptimalKHR)
+    if (res.result != Result::eSuccess && res.result != Result::eSuboptimalKHR)
     {
         std::cout << "[Vulkan] GetImageIndex Error" << "\n";
         return;
@@ -118,7 +120,8 @@ void Renderer::draw()
     clearValues[1].setDepthStencil({1.f, 0});
 
     RenderPassBeginInfo passBeginInfo = swapchain_->newRenderPassBeginInfo(currentFrame);
-    auto frameSize = Context::getInstance()->getFrameSize();
+    Extent2D frameSize{};
+    Application::Current().getWindow().getSize(&frameSize.width, &frameSize.height);
     const Viewport viewport{0, 0, static_cast<float>(frameSize.width), static_cast<float>(frameSize.height), 0.f, 1.f};
     const Rect2D scissor{0, frameSize};
     
@@ -154,21 +157,15 @@ void Renderer::draw()
         .setSignalSemaphores(renderFinishedSemaphores[currentFrame]);
 
     Device::Instance()->graphicsQueue.submit(submitInfo, inFlightFences[currentFrame]);
-
-    PresentInfoKHR presentInfo;
-    presentInfo
-        .setWaitSemaphores(renderFinishedSemaphores[currentFrame])
-        .setSwapchains(swapchain_->get())
-        .setPImageIndices(&imageIndex);
-
-    const auto result = Device::Instance()->presentQueue.presentKHR(&presentInfo);
+    
+    const auto result = swapchain_->present(imageIndex, renderFinishedSemaphores[currentFrame]);
     if (result == Result::eErrorOutOfDateKHR || result == Result::eSuboptimalKHR)
     {
         swapchain_->reCreate();
     }
     else if (result != Result::eSuccess)
     {
-        std::cout << "[Vulkan] Present Error" << "\n";
+        std::cout << "[Vulkan] present Error" << "\n";
         return;
     }
     

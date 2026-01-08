@@ -5,6 +5,8 @@
 #include "Device.h"
 #include "Shader.h"
 #include "Buffer.h"
+#include "Vertex.h"
+#include "Platform/Window.h"
 
 namespace vkRender
 {
@@ -29,6 +31,17 @@ bool Program::init(const std::string& vertFile, const std::string& fragFile)
 void Program::addImageInfo(const DescriptorImageInfo& imageInfo)
 {
     imageInfos_.push_back(imageInfo);
+}
+
+void Program::configAttribute(const std::vector<VertexInputAttributeDescription>& attribute)
+{
+    vertexInput_.binding =
+    {
+        {0, VertexSize, VertexInputRate::eVertex},
+        {1, sizeof(glm::vec3), VertexInputRate::eInstance}
+    };
+    
+    
 }
 
 void Program::setUniform(int currentFrame, const void* data)
@@ -198,7 +211,8 @@ void Program::createPipeline(const RenderPass &renderPass, const VertexInputInfo
     createInfo.setPInputAssemblyState(&inputAssemblyInfo);
 
     // 视口和剪裁矩形
-    Extent2D frameSize = Context::getInstance()->getFrameSize();
+    Extent2D frameSize{};
+    Application::Current().getWindow().getSize(&frameSize.width, &frameSize.height);
     Viewport viewport {0, 0, static_cast<float>(frameSize.width), static_cast<float>(frameSize.height), 1.f};
     Rect2D scissor {0, frameSize};
     

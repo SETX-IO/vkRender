@@ -22,7 +22,7 @@ public:
     bool init(const std::string& vertFile, const std::string& fragFile);
     void addImageInfo(const vk::DescriptorImageInfo& imageInfo);
     
-    // void getUniform();
+    void configAttribute(const std::vector<vk::VertexInputAttributeDescription>& attribute);
     void setUniform(int currentFrame, const void* data);
     void setDescriptor(const std::vector<vk::DescriptorType> &bindings);
     void setBinding(const std::vector<vk::VertexInputBindingDescription>& binding);

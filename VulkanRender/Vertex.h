@@ -12,7 +12,8 @@ struct Vertex
     {
         return x == vertex.x && y == vertex.y && z == vertex.y && w == vertex.w && h == vertex.h;
     }
-};
+};static constexpr uint32_t VertexSize = sizeof(Vertex);
+    
 
 
 }

@@ -1,17 +1,21 @@
 ﻿#pragma once
 
 #include "vkRender.h"
+#include "Platform/Application.h"
 #include "shaderc/shaderc.hpp"
 
 namespace vkRender
 {
 static std::vector<char> readFile(const std::string& filename)
 {
-    std::ifstream file(filename, std::ios::binary | std::ios::ate);
+    std::filesystem::path filePath = Application::Current().getResouceDir();
+    filePath.append(filename);
+    
+    std::ifstream file(filePath, std::ios::binary | std::ios::ate);
 
     if (!file.is_open())
     {
-        std::cout << "not fount File: " << filename << std::endl;
+        std::cout << "not fount File: " << filename << '\n';
         return {};
     }
 

@@ -25,6 +25,13 @@ Device* Device::Instance()
     return s_instance;
 }
 
+void Device::init(Context* context)
+{
+    s_instance = new (std::nothrow) Device();
+    s_instance->context_ = context;
+    s_instance->init();
+}
+
 bool Device::init()
 {
     bool result = false;
@@ -59,6 +66,8 @@ void Device::release()
     
     device_.destroyPipelineCache(pipelineCache_);
     device_.destroy();
+    
+    context_->release();
 }
 
 Semaphore &Device::newSemaphore()
@@ -93,10 +102,11 @@ Queue &Device::getQueue(const uint32_t family)
 bool Device::pickPhysicalDevice()
 {
     std::vector deviceExtension = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
-    std::vector physicalDevices = Context::getInstance()->getVkInstance().enumeratePhysicalDevices();
+    
+    std::vector physicalDevices = context_->getPhysicalDevices();
     
     std::set<std::string> requiredExtensions(deviceExtension.begin(), deviceExtension.end());
-    auto surface = Context::getInstance()->getSurface();
+    auto surface = context_->getSurface();
     
     for (const auto& physicalDevice : physicalDevices)
     {

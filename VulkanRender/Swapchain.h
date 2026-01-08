@@ -30,7 +30,9 @@ public:
     vk::SwapchainKHR &get() {return swapchain_;}
 
     void release() const;
-    void releaseSwapchain() const;
+    void reset() const;
+    
+    vk::Result present(uint32_t imageIndex, vk::Semaphore semaphore);
 
     SwapchainInfo info{};
 private:

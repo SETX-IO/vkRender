@@ -10,7 +10,7 @@ US_VKN;
 Bool32 DebugUtil::debugInfoPrint(DebugUtilsMessageSeverityFlagBitsEXT type,
     DebugUtilsMessageTypeFlagsEXT level, const DebugUtilsMessengerCallbackDataEXT* message, void* userData)
 {
-    fmt::text_style color; ;
+    fmt::text_style color;
     if (level == DebugUtilsMessageTypeFlagBitsEXT::eValidation)
     {
         if (type == DebugUtilsMessageSeverityFlagBitsEXT::eInfo)

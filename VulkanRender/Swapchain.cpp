@@ -4,6 +4,8 @@
 #include "Device.h"
 #include "Texture.h"
 #include "Memory/Memory.h"
+#include "Platform/Application.h"
+#include "Platform/Window.h"
 
 namespace vkRender
 {
@@ -36,13 +38,14 @@ void Swapchain::reCreate()
 {
     Device::Instance()->getDevice().waitIdle();
 
-    auto frameSize = Context::getInstance()->getFrameSize();
+    Extent2D frameSize{};
+    Application::Current().getWindow().getSize(&frameSize.width, &frameSize.height);
     if (frameSize == Extent2D{0, 0})
     {
         return;
     }
     
-    releaseSwapchain();
+    reset();
 
     queryInfo();
     createSwapChain();
@@ -77,13 +80,13 @@ void Swapchain::release() const
 {
     auto device = Device::Instance()->getDevice();
     
-    releaseSwapchain();
+    reset();
     
     device.destroyRenderPass(renderPass_);
     depthTexture->release();
 }
 
-void Swapchain::releaseSwapchain() const
+void Swapchain::reset() const
 {
     auto device = Device::Instance()->getDevice();
     
@@ -98,10 +101,26 @@ void Swapchain::releaseSwapchain() const
     device.destroySwapchainKHR(swapchain_);
 }
 
+Result Swapchain::present(uint32_t imageIndex, Semaphore semaphore)
+{
+    Result result = Result::eSuccess;
+    
+    PresentInfoKHR presentInfo;
+    presentInfo
+        .setWaitSemaphores(semaphore)
+        .setSwapchains(swapchain_)
+        .setPImageIndices(&imageIndex);
+
+    result = Device::Instance()->presentQueue.presentKHR(&presentInfo);
+    
+    return result;
+}
+
 void Swapchain::queryInfo()
 {
     const auto& pDevice = Device::Instance()->getGPU();
-    const auto& surface = Context::getInstance()->getSurface();
+    
+    const auto& surface = Device::Instance()->getSurface();
     
     auto capabilities = pDevice.getSurfaceCapabilitiesKHR(surface);
     auto Formats = pDevice.getSurfaceFormatsKHR(surface);
@@ -128,11 +147,14 @@ void Swapchain::queryInfo()
         }
     }
 
+    Extent2D frameSize{};
+    Application::Current().getWindow().getSize(&frameSize.width, &frameSize.height);
+    
     info.transform = capabilities.currentTransform;
     info.imageCount = std::clamp(capabilities.minImageCount + MAX_FRAME_IN_FLIGHT - capabilities.minImageCount, capabilities.minImageCount, capabilities.maxImageCount);
     info.extent = Extent2D(
-        std::clamp(Context::getInstance()->getFrameSize().width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width),
-        std::clamp(Context::getInstance()->getFrameSize().height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height)
+        std::clamp(frameSize.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width),
+        std::clamp(frameSize.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height)
         );
 }
 
@@ -144,7 +166,7 @@ void Swapchain::createSwapChain()
     std::array indices = {device->indices_.graphicsFamily.value(), device->indices_.presentFamily.value()};
     
     createInfo
-        .setSurface(Context::getInstance()->getSurface())
+        .setSurface(Device::Instance()->getSurface())
         .setImageArrayLayers(1)
         .setMinImageCount(info.imageCount)
         .setImageUsage(ImageUsageFlagBits::eColorAttachment)

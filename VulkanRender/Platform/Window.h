@@ -3,8 +3,6 @@
 #include <GLFW/glfw3.h>
 #include <memory>
 
-
-
 struct DestroyglfwWin
 {
     void operator()(GLFWwindow* ptr) const
@@ -22,6 +20,7 @@ public:
     
     void getVkSurface(VkInstance instance, VkSurfaceKHR* surface) const;
     void getSize(int* width, int* height) const;
+    void getSize(unsigned int* width, unsigned int* height) const;
     bool getIsClose();
     
     void setWindowSetSizeCallBack(SetSizeCallBackPtr cullbackPtr);

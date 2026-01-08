@@ -4,17 +4,31 @@
 
 #include "Window.h"
 
-Application::Application(bool useVulkan) : window_(nullptr), useVulkan(useVulkan), loopCullBack_(nullptr)
+std::unique_ptr<Application> Application::currentPtr_ = nullptr;
+
+Application::Application(bool useVulkan): 
+window_(nullptr), 
+useVulkan(useVulkan),
+loopCullBack_(nullptr)
 {
     glfwInit();
 
     glfwWindowHint(GLFW_CLIENT_API, !useVulkan);
     glfwWindowHint(GLFW_RESIZABLE, !useVulkan);
+    
+    currentPtr_.reset(this);
 }
 
-void Application::run(Window * window)
+Application& Application::Current()
 {
-    window_.reset(window);
+    return *currentPtr_;
+}
+
+void Application::run(Window* window)
+{
+    if (!window_)
+        window_.reset(window);
+    
     while (!window_->getIsClose())
     {
         loopCullBack_();
@@ -24,7 +38,12 @@ void Application::run(Window * window)
     glfwTerminate();
 }
 
-std::vector<const char*> Application::getInstanceExtensions()
+void Application::run()
+{
+    run(window_.get());
+}
+
+std::vector<const char*> Application::getInstanceExtensions() const
 {
     assert(useVulkan);
     
@@ -41,4 +60,27 @@ std::vector<const char*> Application::getInstanceExtensions()
 void Application::setLoopCullBack(LoopCullBackPtr cullBcak)
 {
     this->loopCullBack_ = cullBcak;
+}
+
+void Application::setResouceDir(const char* path)
+{
+    assert(strlen(path));
+    
+    resoucesDir_ = path;
+}
+
+std::string Application::getResouceDir() const
+{
+    return resoucesDir_.string();
+}
+
+void Application::setWindow(Window* window)
+{
+    assert(window);
+    window_.reset(window);
+}
+
+Window& Application::getWindow() const
+{
+    return *window_;
 }

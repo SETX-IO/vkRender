@@ -16,6 +16,11 @@ void Window::getSize(int* width, int* height) const
     glfwGetWindowSize(windowPtr_.get(), width, height);
 }
 
+void Window::getSize(unsigned int* width, unsigned int* height) const
+{
+    glfwGetWindowSize(windowPtr_.get(), reinterpret_cast<int*>(width), reinterpret_cast<int*>(height));
+}
+
 bool Window::getIsClose()
 {
     isClose_ = glfwWindowShouldClose(windowPtr_.get());

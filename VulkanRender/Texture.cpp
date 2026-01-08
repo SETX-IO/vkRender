@@ -7,6 +7,7 @@
 #include "Swapchain.h"
 #include "Memory/Memory.h"
 #include "Buffer.h"
+#include "Platform/Application.h"
 
 namespace vkRender
 {
@@ -34,7 +35,10 @@ Texture* Texture::createDepth(uint32_t w, uint32_t h)
 
 bool Texture::init(const std::string& fileName)
 {
-    if (!(data_ = stbi_load(fileName.c_str(), &width_, &height_, & TexChannels, STBI_rgb_alpha)))
+    std::filesystem::path filePath = Application::Current().getResouceDir();
+    filePath.append(fileName);
+    
+    if (!(data_ = stbi_load(filePath.string().c_str(), &width_, &height_, & TexChannels, STBI_rgb_alpha)))
     {
        return false;
     }
